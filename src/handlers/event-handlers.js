@@ -229,8 +229,9 @@ const eventHandlers = {
         utils.showError(`Invalid parameters: ${validationErrors.join(', ')}`, elements);
         return;
       }
+      let timeoutId;
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Security timeout')), state.CONFIG.SECURITY_TIMEOUT);
+        timeoutId = setTimeout(() => reject(new Error('Security timeout')), state.CONFIG.SECURITY_TIMEOUT);
       });
       utils.showLoading(elements, state.isConverting);
       utils.hideError(elements);
@@ -247,6 +248,7 @@ const eventHandlers = {
         }
         performanceMetrics.endConversion(false);
       } finally {
+        clearTimeout(timeoutId);
         utils.hideLoading(elements, state.isConverting);
         performanceMetrics.updateMemoryUsage();
       }
@@ -323,7 +325,7 @@ const eventHandlers = {
 
     const toastEl = document.getElementById('successToast');
     const toastMessage = document.getElementById('successToastMessage');
-    if (toastEl && toastMessage) {
+    if (toastEl && toastMessage && typeof bootstrap !== 'undefined' && bootstrap.Toast) {
       toastMessage.textContent = message;
       const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
       toast.show();
