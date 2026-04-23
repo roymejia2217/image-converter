@@ -133,11 +133,7 @@ const eventHandlers = {
 
       const removeBtn = document.createElement('button');
       removeBtn.className = 'remove-file-btn';
-      removeBtn.innerHTML = `
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      `;
+      removeBtn.innerHTML = utils.icon('x-lg', 16);
       removeBtn.onclick = () => {
         this.removeFile(index, state, elements);
       };
@@ -335,9 +331,7 @@ const eventHandlers = {
       notification.className = 'position-fixed top-0 end-0 m-3 alert alert-success d-flex align-items-center gap-2 shadow';
       notification.style.zIndex = '9999';
       notification.innerHTML = `
-        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
+        ${utils.icon('check-lg', 20)}
         <span>${utils.sanitizeText(message)}</span>
       `;
       document.body.appendChild(notification);

@@ -241,3 +241,9 @@ body {
     image-rendering: crisp-edges;
   }
 }
+
+/* Bootstrap Icons sizing utilities */
+.bi-16 { font-size: 1rem; }
+.bi-20 { font-size: 1.25rem; }
+.bi-28 { font-size: 1.75rem; }
+.bi-48 { font-size: 3rem; }
