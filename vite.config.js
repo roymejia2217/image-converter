@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/image-converter/', // Necesario para despliegue en GitHub Pages
+  base: '/image-converter/',
   build: {
     rollupOptions: {
       output: {
@@ -9,7 +9,6 @@ export default defineConfig({
           vendor: ['browser-image-compression'],
           utils: ['jszip'],
         },
-        // Optimizaciones de seguridad y cache busting
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name.split('.');
           const ext = info[info.length - 1];
@@ -22,7 +21,6 @@ export default defineConfig({
         entryFileNames: 'assets/js/[name]-[hash].js',
       },
     },
-    // Optimizaciones de rendimiento
     minify: 'terser',
     terserOptions: {
       compress: {
@@ -31,19 +29,13 @@ export default defineConfig({
         pure_funcs: ['console.log', 'console.info', 'console.debug'],
       },
     },
-    // Generar source maps solo en desarrollo
     sourcemap: false,
-    // Límite de advertencias de tamaño
     chunkSizeWarningLimit: 1000,
-    // Optimizaciones de CSS
     cssCodeSplit: true,
-    // Optimizaciones de assets
     assetsInlineLimit: 4096,
   },
-  // Optimizaciones de desarrollo
   server: {
     hmr: true,
-    // Headers de seguridad para desarrollo
     headers: {
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
@@ -52,16 +44,10 @@ export default defineConfig({
       'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
     },
   },
-  // Optimizaciones de plugins
   plugins: [],
-  // Configuración de optimización
   optimizeDeps: {
     include: ['browser-image-compression', 'jszip'],
-    exclude: ['canvas'], // Excluir dependencias innecesarias
   },
-  // Configuración de assets
-  assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.svg', '**/*.ico'],
-  
-  // Configuración específica para favicon
+  assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.svg'],
   publicDir: 'public',
 });

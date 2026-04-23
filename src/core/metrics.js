@@ -1,7 +1,7 @@
 import canvasPool from './canvas-pool.js';
 import memoryManager from './memory-manager.js';
 
-// Métricas de rendimiento de la aplicación
+// Application performance metrics
 const performanceMetrics = {
   conversions: { total: 0, successful: 0, failed: 0 },
   files: { processed: 0, totalSize: 0 },
@@ -47,7 +47,6 @@ const performanceMetrics = {
 
   logStats() {
     const stats = this.getStats();
-    // logger.info('Performance metrics:', stats); // El logger se importa donde se use
     console.log('[INFO] Performance metrics:', stats);
   }
 };

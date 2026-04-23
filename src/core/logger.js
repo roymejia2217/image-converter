@@ -1,7 +1,7 @@
-// Logger estructurado para la aplicación
+// Structured logger for the application
 const logger = {
   levels: { ERROR: 0, WARN: 1, INFO: 2, DEBUG: 3 },
-  currentLevel: 2, // INFO por defecto
+  currentLevel: 2, // INFO by default
 
   setLevel(level) {
     this.currentLevel = level;

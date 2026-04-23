@@ -1,7 +1,7 @@
-// Pool de canvas optimizado para reutilización
+// Optimized canvas pool for reuse
 const canvasPool = {
-  pool: new Map(), // Usar Map para mejor rendimiento
-  maxSize: 10, // Aumentar tamaño del pool
+  pool: new Map(),
+  maxSize: 10,
   stats: { created: 0, reused: 0, discarded: 0 },
 
   getCanvas(width, height) {
@@ -14,7 +14,6 @@ const canvasPool = {
       return canvas;
     }
 
-    // Crear nuevo canvas
     canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -26,7 +25,6 @@ const canvasPool = {
     const key = `${canvas.width}x${canvas.height}`;
 
     if (this.pool.size < this.maxSize) {
-      // Limpiar el canvas
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       this.pool.set(key, canvas);
@@ -35,13 +33,11 @@ const canvasPool = {
     }
   },
 
-  // Método para limpiar el pool
   cleanup() {
     this.pool.clear();
     console.log('Canvas pool stats:', this.stats);
   },
 
-  // Método para obtener estadísticas
   getStats() {
     return { ...this.stats, poolSize: this.pool.size };
   }

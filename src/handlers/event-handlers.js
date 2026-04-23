@@ -2,72 +2,45 @@ import utils from '../utils/utils.js';
 import performanceMetrics from '../core/metrics.js';
 import lazyLoader from '../core/lazy-loader.js';
 import memoryManager from '../core/memory-manager.js';
-import canvasPool from '../core/canvas-pool.js';
 import FORMAT_CONFIGS from '../config/format-configs.js';
-import { ImageEditorSystem } from '../image-editor/index.js';
-
-// NOTA: Las referencias a estado global (currentFiles, isConverting, currentFormatConfig, etc.)
-// se deben adaptar para futura integración con state.js
 
 const eventHandlers = {
-  // Sistema de editor de imágenes nativo
-  imageEditorSystem: null,
-
-  // Inicializar sistema de editor
-  initializeImageEditor() {
-    if (!this.imageEditorSystem) {
-      this.imageEditorSystem = new ImageEditorSystem();
-      this.imageEditorSystem.initialize();
-      
-      // Configurar callbacks
-      this.imageEditorSystem.configureCallbacks({
-        onSave: this.handleEditorSave.bind(this),
-        onClose: this.handleEditorClose.bind(this)
-      });
-    }
-  },
-
-  // Manejar selección de archivo
   async handleFileSelect(event, state, elements) {
-    console.log('handleFileSelect llamado', event.target.files);
     const files = Array.from(event.target.files);
+    // Reset input so the same file can be selected again
+    event.target.value = '';
     if (files.length > 0) {
-      console.log('Archivos seleccionados:', files);
       await this.processFiles(files, state, elements);
     }
   },
 
-  // Manejar arrastre de archivo
   async handleDrop(event, state, elements) {
     event.preventDefault();
-    elements.dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+    elements.dropZone.classList.remove('drop-zone-active');
     const files = Array.from(event.dataTransfer.files);
     if (files.length > 0) {
       await this.processFiles(files, state, elements);
     }
   },
 
-  // Manejar drag over
   handleDragOver(event, elements) {
     event.preventDefault();
-    elements.dropZone.classList.add('border-blue-400', 'bg-blue-50');
+    elements.dropZone.classList.add('drop-zone-active');
   },
 
-  // Manejar drag leave
   handleDragLeave(event, elements) {
     event.preventDefault();
-    elements.dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+    elements.dropZone.classList.remove('drop-zone-active');
   },
 
-  // Procesar archivos seleccionados
   async processFiles(files, state, elements) {
     try {
       if (!Array.isArray(files) || files.length === 0) {
-        utils.showError('No se proporcionaron archivos válidos', elements);
+        utils.showError('No valid files provided', elements);
         return;
       }
       if (files.length > state.CONFIG.MAX_FILES) {
-        utils.showError(`Máximo ${state.CONFIG.MAX_FILES} archivos permitidos`, elements);
+        utils.showError(`Maximum ${state.CONFIG.MAX_FILES} files allowed`, elements);
         return;
       }
       const validFiles = [];
@@ -75,26 +48,26 @@ const eventHandlers = {
       const validationPromises = files.map(async (file) => {
         try {
           if (!file || !(file instanceof File)) {
-            return { valid: false, error: 'Archivo inválido' };
+            return { valid: false, error: 'Invalid file' };
           }
           if (!utils.isValidFileName(file.name)) {
-            return { valid: false, error: `Nombre inválido: ${file.name}` };
+            return { valid: false, error: `Invalid name: ${file.name}` };
           }
           const isValidType = await utils.isValidImageType(file);
           if (!isValidType) {
-            return { valid: false, error: `Tipo no soportado: ${file.name}` };
+            return { valid: false, error: `Unsupported type: ${file.name}` };
           }
           if (!utils.isValidFileSize(file)) {
-            return { valid: false, error: `Tamaño excede límite: ${file.name}` };
+            return { valid: false, error: `Size exceeds limit: ${file.name}` };
           }
           if (file.size === 0) {
-            return { valid: false, error: `Archivo vacío: ${file.name}` };
+            return { valid: false, error: `Empty file: ${file.name}` };
           }
           performanceMetrics.addFile(file);
           return { valid: true, file };
         } catch (error) {
-          console.error('Error procesando archivo:', error);
-          return { valid: false, error: `Error en archivo: ${file.name}` };
+          console.error('Error processing file:', error);
+          return { valid: false, error: `Error in file: ${file.name}` };
         }
       });
       const results = await Promise.all(validationPromises);
@@ -106,7 +79,7 @@ const eventHandlers = {
         }
       });
       if (invalidFiles.length > 0) {
-        utils.showError(`Archivos inválidos: ${invalidFiles.slice(0, 3).join(', ')}${invalidFiles.length > 3 ? '...' : ''}`, elements);
+        utils.showError(`Invalid files: ${invalidFiles.slice(0, 3).join(', ')}${invalidFiles.length > 3 ? '...' : ''}`, elements);
       }
       if (validFiles.length > 0) {
         state.currentFiles = validFiles;
@@ -114,38 +87,36 @@ const eventHandlers = {
         this.updateFileList(state, elements);
       }
     } catch (error) {
-      console.error('Error en processFiles:', error);
-      utils.showError('Error procesando archivos', elements);
+      console.error('Error in processFiles:', error);
+      utils.showError('Error processing files', elements);
     }
   },
 
-  // Actualizar lista de archivos
   updateFileList(state, elements) {
     if (!elements.fileList || !elements.fileListContainer) return;
     elements.fileList.innerHTML = '';
     if (state.currentFiles.length === 0) {
-      elements.fileListContainer.classList.add('hidden');
+      elements.fileListContainer.classList.add('d-none');
       return;
     }
-    elements.fileListContainer.classList.remove('hidden');
+    elements.fileListContainer.classList.remove('d-none');
     state.currentFiles.forEach((file, index) => {
       const fileItem = document.createElement('div');
       fileItem.className = 'file-list-item';
-      // Contenedor izquierdo con vista previa y información
+
       const leftContainer = document.createElement('div');
-      leftContainer.className = 'flex items-center flex-1';
-      // Vista previa en miniatura
+      leftContainer.className = 'd-flex align-items-center flex-grow-1';
+
       const previewContainer = document.createElement('div');
       previewContainer.className = 'file-preview-thumbnail';
       const previewImg = document.createElement('img');
-      previewImg.className = 'w-full h-full object-cover';
-      previewImg.alt = `Vista previa de ${file.name}`;
-      // Crear URL para la vista previa usando el memory manager
+      previewImg.className = 'w-100 h-100 object-fit-cover';
+      previewImg.alt = `Preview of ${file.name}`;
       const previewUrl = memoryManager.createObjectURL(file);
-      file.previewUrl = previewUrl; // Almacenar URL para limpieza posterior
+      file.previewUrl = previewUrl;
       previewImg.src = previewUrl;
       previewContainer.appendChild(previewImg);
-      // Información del archivo
+
       const fileInfo = document.createElement('div');
       fileInfo.className = 'file-info';
       const truncatedName = utils.truncateFileName(file.name, 25);
@@ -156,52 +127,32 @@ const eventHandlers = {
         <div class="file-name" title="${sanitizedFileName}">${sanitizedTruncatedName}</div>
         <div class="file-size">${sanitizedFileSize}</div>
       `;
+
       leftContainer.appendChild(previewContainer);
       leftContainer.appendChild(fileInfo);
-      // Contenedor de botones
-      const buttonsContainer = document.createElement('div');
-      buttonsContainer.className = 'flex items-center space-x-2';
-      // Botón de editar
-      const editBtn = document.createElement('button');
-      editBtn.className = 'edit-file-btn';
-      editBtn.innerHTML = `
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-        </svg>
-      `;
-      editBtn.title = 'Editar imagen';
-      editBtn.onclick = () => {
-        if (this.openImageEditor) this.openImageEditor(index, state, elements);
-      };
-      // Botón de eliminar
+
       const removeBtn = document.createElement('button');
       removeBtn.className = 'remove-file-btn';
       removeBtn.innerHTML = `
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       `;
       removeBtn.onclick = () => {
         this.removeFile(index, state, elements);
       };
-      buttonsContainer.appendChild(editBtn);
-      buttonsContainer.appendChild(removeBtn);
+
       fileItem.appendChild(leftContainer);
-      fileItem.appendChild(buttonsContainer);
+      fileItem.appendChild(removeBtn);
       elements.fileList.appendChild(fileItem);
     });
   },
 
-  // Remover archivo con gestión de memoria mejorada
   removeFile(index, state, elements) {
     const file = state.currentFiles[index];
     if (file) {
-      // Limpiar contexto del archivo
-      this.clearFileContext(file);
-      
-      // Limpiar URL de preview
       if (file.previewUrl) {
-      memoryManager.revokeObjectURL(file.previewUrl);
+        memoryManager.revokeObjectURL(file.previewUrl);
       }
     }
     state.currentFiles.splice(index, 1);
@@ -209,30 +160,23 @@ const eventHandlers = {
     this.updateFileInfo(state, elements);
   },
 
-  // Actualizar información del archivo (placeholder)
   updateFileInfo(state, elements) {
-    // Información ya mostrada en la lista
+    // Info already shown in the list
   },
 
-  // Remover todas las imágenes con limpieza de memoria
   removeAllImages(state, elements) {
     state.currentFiles.forEach(file => {
-      // Limpiar contexto del archivo
-      this.clearFileContext(file);
-      
-      // Limpiar URL de preview
       if (file.previewUrl) {
         memoryManager.revokeObjectURL(file.previewUrl);
       }
     });
     state.currentFiles = [];
     elements.fileInput.value = '';
-    elements.fileListContainer.classList.add('hidden');
+    elements.fileListContainer.classList.add('d-none');
     this.updateFileList(state, elements);
     utils.hideError(elements);
   },
 
-  // Actualizar opciones de formato
   updateFormatOptions(state, elements) {
     const selectedFormat = elements.formatSelect.value;
     state.currentFormatConfig = FORMAT_CONFIGS[selectedFormat];
@@ -244,52 +188,37 @@ const eventHandlers = {
     });
   },
 
-  // Obtener opciones de formato
   getFormatOptions(elements) {
     const options = {};
     elements.formatOptions.querySelectorAll('input, select').forEach(element => {
-      if (element.type === 'checkbox') {
-        if (!(element.name in options)) {
-          options[element.name] = [];
-        }
-        if (element.checked) {
-          options[element.name].push(element.value);
-        }
-      } else if (element.type === 'range') {
-        options[element.name] = parseInt(element.value);
-      } else if (element.tagName === 'SELECT') {
-        if (element.multiple) {
-          options[element.name] = Array.from(element.selectedOptions).map(opt => opt.value);
-        } else {
-          options[element.name] = element.value;
-        }
+      if (element.type === 'range') {
+        options[element.name] = parseFloat(element.value);
       }
     });
     return options;
   },
 
-  // Convertir imagen
   async convertImage(state, elements) {
     try {
       performanceMetrics.startConversion();
       performanceMetrics.updateMemoryUsage();
       if (state.currentFiles.length === 0) {
-        utils.showError('No hay archivos seleccionados', elements);
+        utils.showError('No files selected', elements);
         performanceMetrics.endConversion(false);
         return;
       }
       if (state.isConverting.value) {
-        utils.showError('Conversión en progreso', elements);
+        utils.showError('Conversion in progress', elements);
         performanceMetrics.endConversion(false);
         return;
       }
       if (!state.currentFormatConfig) {
-        utils.showError('Formato no configurado', elements);
+        utils.showError('Format not configured', elements);
         performanceMetrics.endConversion(false);
         return;
       }
       if (!utils.checkRateLimit(state.lastConversionTime)) {
-        utils.showError('Espere un momento antes de realizar otra conversión', elements);
+        utils.showError('Please wait a moment before another conversion', elements);
         performanceMetrics.endConversion(false);
         return;
       }
@@ -297,24 +226,24 @@ const eventHandlers = {
       const formatOptions = this.getFormatOptions(elements);
       const validationErrors = utils.validateInputParams(formatOptions);
       if (validationErrors.length > 0) {
-        utils.showError(`Parámetros inválidos: ${validationErrors.join(', ')}`, elements);
+        utils.showError(`Invalid parameters: ${validationErrors.join(', ')}`, elements);
         return;
       }
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout de seguridad')), state.CONFIG.SECURITY_TIMEOUT);
+        setTimeout(() => reject(new Error('Security timeout')), state.CONFIG.SECURITY_TIMEOUT);
       });
       utils.showLoading(elements, state.isConverting);
       utils.hideError(elements);
       utils.generateSecurityToken(state.securityToken);
       try {
-        const conversionPromise = this.performConversion(targetFormat, formatOptions, state, elements);
+        const conversionPromise = this.performConversionSync(targetFormat, formatOptions, state, elements);
         await Promise.race([conversionPromise, timeoutPromise]);
       } catch (error) {
-        if (error.message === 'Timeout de seguridad') {
-          utils.showError('Operación cancelada por seguridad', elements);
+        if (error.message === 'Security timeout') {
+          utils.showError('Operation cancelled for security', elements);
         } else {
-          console.error('Error durante la conversión:', error);
-          utils.showError('Error durante la conversión', elements);
+          console.error('Error during conversion:', error);
+          utils.showError('Error during conversion', elements);
         }
         performanceMetrics.endConversion(false);
       } finally {
@@ -322,316 +251,102 @@ const eventHandlers = {
         performanceMetrics.updateMemoryUsage();
       }
     } catch (error) {
-      console.error('Error en convertImage:', error);
-      utils.showError('Error interno del sistema', elements);
+      console.error('Error in convertImage:', error);
+      utils.showError('Internal system error', elements);
       performanceMetrics.endConversion(false);
       utils.hideLoading(elements, state.isConverting);
-    }
-  },
-
-  async performConversion(targetFormat, formatOptions, state, elements) {
-    if (targetFormat === 'image/ico' && formatOptions.sizes) {
-      await this.convertToIcoMultiple(formatOptions.sizes, state, elements);
-      return;
-    }
-    if (state.workerManager && state.workerManager.isWorkerAvailable()) {
-      await this.performConversionWithWorker(targetFormat, formatOptions, state, elements);
-    } else {
-      await this.performConversionSync(targetFormat, formatOptions, state, elements);
-    }
-  },
-
-  async performConversionWithWorker(targetFormat, formatOptions, state, elements) {
-    try {
-      if (!state.workerManager) {
-        const WorkerManagerClass = await lazyLoader.loadWorkerManager();
-        if (WorkerManagerClass.isSupported()) {
-          state.workerManager = new WorkerManagerClass();
-        } else {
-          throw new Error('Web Workers no soportados');
-        }
-      }
-      const formatConfig = FORMAT_CONFIGS[targetFormat];
-      // Manejar formatos que no tienen calidad (como PNG)
-      const defaultQuality = formatConfig.quality ? formatConfig.quality.default / 100 : 1.0;
-      const options = {
-        maxSizeMB: state.CONFIG.MAX_SIZE_MB,
-        maxWidthOrHeight: state.CONFIG.MAX_WIDTH_HEIGHT,
-        fileType: targetFormat,
-        quality: defaultQuality,
-        ...formatOptions
-      };
-      const results = await state.workerManager.processMultipleFiles(
-        state.currentFiles,
-        options,
-        (progress) => {
-          console.log(`Progreso: ${Math.round(progress.progress)}% - Archivo ${progress.index + 1}`);
-        }
-      );
-      const convertedFiles = [];
-      for (let i = 0; i < results.length; i++) {
-        const result = results[i];
-        if (result.success) {
-          const file = state.currentFiles[i];
-          const originalName = file.name.split('.')[0];
-          const extension = utils.getFormatExtension(targetFormat);
-          const fileName = utils.sanitizeFileName(`${originalName}_converted.${extension}`);
-          convertedFiles.push({ file: result.file, fileName });
-        } else {
-          console.error(`Error convirtiendo archivo ${i + 1}:`, result.error);
-          throw new Error(`Error convirtiendo archivo ${i + 1}: ${result.error}`);
-        }
-      }
-      if (convertedFiles.length === 1) {
-        utils.downloadFile(convertedFiles[0].file, convertedFiles[0].fileName);
-        this.showSuccessMessage(state, convertedFiles[0].file.size, elements);
-      } else {
-        const zipBlob = await utils.createZipFile(convertedFiles);
-        const zipFileName = `imagenes_convertidas_${new Date().toISOString().slice(0, 10)}.zip`;
-        utils.downloadFile(zipBlob, zipFileName);
-        this.showSuccessMessage(state, 0, elements, `Convertidos ${convertedFiles.length} archivos en ZIP`);
-      }
-    } catch (error) {
-      console.error('Error en conversión con Web Worker:', error);
-      await this.performConversionSync(targetFormat, formatOptions, state, elements);
     }
   },
 
   async performConversionSync(targetFormat, formatOptions, state, elements) {
     const imageCompression = await lazyLoader.loadImageCompression();
     const convertedFiles = [];
-    for (let i = 0; i < state.currentFiles.length; i++) {
+    const totalFiles = state.currentFiles.length;
+
+    for (let i = 0; i < totalFiles; i++) {
       try {
         const file = state.currentFiles[i];
         const formatConfig = FORMAT_CONFIGS[targetFormat];
-        // Manejar formatos que no tienen calidad (como PNG)
-        const defaultQuality = formatConfig.quality ? formatConfig.quality.default / 100 : 1.0;
+        const defaultQuality = formatConfig.options.initialQuality ? formatConfig.options.initialQuality.default : 0.9;
+        const quality = formatOptions.initialQuality !== undefined ? formatOptions.initialQuality : defaultQuality;
+
         const options = {
           maxSizeMB: state.CONFIG.MAX_SIZE_MB,
           maxWidthOrHeight: state.CONFIG.MAX_WIDTH_HEIGHT,
           useWebWorker: false,
           fileType: targetFormat,
-          quality: defaultQuality,
-          ...formatOptions,
-          onProgress: (progress) => {
-            console.log(`Progreso archivo ${i + 1}: ${Math.round(progress)}%`);
-          }
+          initialQuality: quality,
+          onProgress: () => {}
         };
+
         const compressedFile = await imageCompression(file, options);
         const originalName = file.name.split('.')[0];
         const extension = utils.getFormatExtension(targetFormat);
         const fileName = utils.sanitizeFileName(`${originalName}_converted.${extension}`);
         convertedFiles.push({ file: compressedFile, fileName });
+
+        // Update progress bar per file
+        const progressPercent = Math.round(((i + 1) / totalFiles) * 100);
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        if (progressBar) {
+          progressBar.style.width = `${progressPercent}%`;
+          progressBar.setAttribute('aria-valuenow', String(progressPercent));
+        }
+        if (progressText) {
+          progressText.textContent = `Converting file ${i + 1} of ${totalFiles}`;
+        }
       } catch (error) {
-        console.error(`Error convirtiendo archivo ${i + 1}:`, error);
-        throw new Error(`Error convirtiendo archivo ${i + 1}`);
+        console.error(`Error converting file ${i + 1}:`, error);
+        throw new Error(`Error converting file ${i + 1}`);
       }
     }
+
     if (convertedFiles.length === 1) {
       utils.downloadFile(convertedFiles[0].file, convertedFiles[0].fileName);
       this.showSuccessMessage(state, convertedFiles[0].file.size, elements);
     } else {
       const zipBlob = await utils.createZipFile(convertedFiles);
-      const zipFileName = `imagenes_convertidas_${new Date().toISOString().slice(0, 10)}.zip`;
+      const zipFileName = `converted_images_${new Date().toISOString().slice(0, 10)}.zip`;
       utils.downloadFile(zipBlob, zipFileName);
-      this.showSuccessMessage(state, 0, elements, `Convertidos ${convertedFiles.length} archivos en ZIP`);
+      this.showSuccessMessage(state, 0, elements, `Converted ${convertedFiles.length} files to ZIP`);
     }
   },
 
-  // Conversión especial para ICO múltiple
-  async convertToIcoMultiple(sizes, state, elements) {
-    const convertedFiles = [];
-    const errors = [];
-    const icoConfig = FORMAT_CONFIGS['image/ico'];
-    const allSizes = [...(icoConfig.hiddenSizes || []), ...sizes];
-    for (let i = 0; i < state.currentFiles.length; i++) {
-      const file = state.currentFiles[i];
-      const originalName = file.name.split('.')[0];
-      for (const size of allSizes) {
-        try {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          const img = new Image();
-          await new Promise((resolve, reject) => {
-            img.onload = () => {
-              try {
-                canvas.width = size;
-                canvas.height = size;
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'high';
-                ctx.drawImage(img, 0, 0, size, size);
-                resolve();
-              } catch (error) {
-                reject(error);
-              }
-            };
-            img.onerror = () => reject(new Error('Error al cargar imagen'));
-            img.src = URL.createObjectURL(file);
-          });
-          const blob = await new Promise((resolve) => {
-            canvas.toBlob((blob) => {
-              if (blob) {
-                resolve(blob);
-              } else {
-                resolve(null);
-              }
-            }, 'image/png', 1.0);
-          });
-          if (!blob) {
-            throw new Error(`No se pudo crear blob para ${size}x${size}`);
-          }
-          if (!icoConfig.hiddenSizes.includes(size)) {
-            const fileName = utils.sanitizeFileName(`${originalName}_${size}x${size}.ico`);
-            convertedFiles.push({ file: blob, fileName });
-          }
-        } catch (error) {
-          const errorMsg = `Error convirtiendo ${file.name} a ${size}x${size}: ${error.message}`;
-          errors.push(errorMsg);
-        }
-      }
-    }
-    if (errors.length > 0) {
-      console.warn('Errores durante la conversión:', errors);
-    }
-    if (convertedFiles.length === 0) {
-      utils.showError('No se pudo generar ningún icono. Verifica que las imágenes sean válidas.', elements);
-      return;
-    } else if (convertedFiles.length === 1) {
-      utils.downloadFile(convertedFiles[0].file, convertedFiles[0].fileName);
-      this.showSuccessMessage(state, 0, elements, 'Icono convertido exitosamente');
-    } else {
-      const zipBlob = await utils.createZipFile(convertedFiles);
-      const zipFileName = `iconos_${new Date().toISOString().slice(0, 10)}.zip`;
-      utils.downloadFile(zipBlob, zipFileName);
-      this.showSuccessMessage(state, 0, elements, `Generados ${convertedFiles.length} iconos en ZIP`);
-    }
-  },
-
-  // Mostrar mensaje de éxito
   showSuccessMessage(state, compressedSize, elements, customMessage = null) {
     let message = customMessage;
     if (!message) {
       const totalOriginalSize = state.currentFiles.reduce((sum, file) => sum + file.size, 0);
       const reduction = totalOriginalSize > 0 ? ((totalOriginalSize - compressedSize) / totalOriginalSize * 100).toFixed(1) : 0;
-      message = `Conversión exitosa - Reducción: ${reduction}%`;
+      message = `Conversion successful - Reduction: ${reduction}%`;
     }
-    const notification = document.createElement('div');
-    notification.className = 'fixed top-4 right-4 bg-green-500 text-white p-4 rounded-lg shadow-lg z-50 notification-enter';
-    notification.innerHTML = `
-      <div class="flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+    const toastEl = document.getElementById('successToast');
+    const toastMessage = document.getElementById('successToastMessage');
+    if (toastEl && toastMessage) {
+      toastMessage.textContent = message;
+      const toast = bootstrap.Toast.getOrCreateInstance(toastEl);
+      toast.show();
+    } else {
+      // Fallback if toast not available
+      const notification = document.createElement('div');
+      notification.className = 'position-fixed top-0 end-0 m-3 alert alert-success d-flex align-items-center gap-2 shadow';
+      notification.style.zIndex = '9999';
+      notification.innerHTML = `
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
         </svg>
-        <span>${message}</span>
-      </div>
-    `;
-    document.body.appendChild(notification);
-    setTimeout(() => {
-      notification.classList.add('notification-exit');
+        <span>${utils.sanitizeText(message)}</span>
+      `;
+      document.body.appendChild(notification);
       setTimeout(() => {
         if (document.body.contains(notification)) {
           document.body.removeChild(notification);
         }
-      }, 300);
-    }, 3000);
-  },
-
-  // Editor de imagen nativo (reemplaza TOAST UI)
-  async openImageEditor(fileIndex, state, elements) {
-    const file = state.currentFiles[fileIndex];
-    if (!file) {
-      utils.showError('Archivo no encontrado', elements);
-      return;
-    }
-
-    try {
-      // Inicializar sistema de editor si no está inicializado
-      this.initializeImageEditor();
-      
-      // Almacenar referencia al archivo actual para el callback
-      this.currentEditingFileIndex = fileIndex;
-      this.currentEditingState = state;
-      this.currentEditingElements = elements;
-      
-      // Abrir editor con el archivo
-      await this.imageEditorSystem.openEditor(file);
-      
-    } catch (error) {
-      console.error('Error abriendo editor de imagen:', error);
-      utils.showError('Error al abrir el editor de imagen', elements);
+      }, 3000);
     }
   },
 
-  // Callback para guardar imagen editada
-  async handleEditorSave(editedBlob, originalFile) {
-    try {
-      const { currentEditingFileIndex, currentEditingState, currentEditingElements } = this;
-      
-      if (currentEditingFileIndex === undefined || !currentEditingState || !currentEditingElements) {
-        throw new Error('Referencias de edición no encontradas');
-      }
-
-      // Crear nueva URL para la imagen editada
-      const editedUrl = memoryManager.createObjectURL(editedBlob);
-      
-      // Revocar URL anterior si existe
-      const currentFile = currentEditingState.currentFiles[currentEditingFileIndex];
-      if (currentFile.previewUrl) {
-        memoryManager.revokeObjectURL(currentFile.previewUrl);
-      }
-
-      // Crear nuevo archivo con la imagen editada
-      const newFile = new File([editedBlob], currentFile.name, { 
-        type: currentFile.type,
-        lastModified: Date.now()
-      });
-
-      // Actualizar archivo en el estado
-      currentEditingState.currentFiles[currentEditingFileIndex] = newFile;
-      
-      // Crear nueva URL de preview
-      newFile.previewUrl = memoryManager.createObjectURL(newFile);
-
-      // Limpiar contexto del archivo anterior (ya no es necesario)
-      if (this.imageEditorSystem) {
-        const oldFileId = this.imageEditorSystem.getFileContextManager().generateFileId(currentFile);
-        this.imageEditorSystem.clearFileContext(oldFileId);
-      }
-
-      // Actualizar UI
-      this.updateFileList(currentEditingState, currentEditingElements);
-      this.showSuccessMessage(currentEditingState, 0, currentEditingElements, 'Imagen editada exitosamente');
-      
-    } catch (error) {
-      console.error('Error guardando imagen editada:', error);
-      if (this.currentEditingElements) {
-        utils.showError('Error al guardar los cambios', this.currentEditingElements);
-      }
-    }
-  },
-
-  // Callback para cerrar editor
-  handleEditorClose() {
-    // Limpiar referencias
-    this.currentEditingFileIndex = undefined;
-    this.currentEditingState = null;
-    this.currentEditingElements = null;
-  },
-
-  // Limpiar contexto de archivo cuando se elimina
-  clearFileContext(file) {
-    if (this.imageEditorSystem) {
-      const fileId = this.imageEditorSystem.getFileContextManager().generateFileId(file);
-      const removed = this.imageEditorSystem.clearFileContext(fileId);
-      if (removed) {
-        console.log(`Contexto eliminado para archivo: ${file.name}`);
-      }
-    }
-  },
-
-  // Métodos de TOAST UI eliminados - ahora usamos el sistema nativo
-
-  // Utilidad para calcular tamaño de imagen
   calculateImageSize(imgWidth, imgHeight, maxWidth, maxHeight) {
     const ratio = Math.min(maxWidth / imgWidth, maxHeight / imgHeight);
     return {

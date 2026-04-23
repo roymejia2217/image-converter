@@ -1,7 +1,5 @@
-// Carga dinámica (lazy loading) de dependencias pesadas
+// Lazy loading of heavy dependencies
 let imageCompression = null;
-let ImageWorkerManager = null;
-// TOAST UI y Fabric eliminados - ahora usamos sistema nativo
 
 const lazyLoader = {
   async loadImageCompression() {
@@ -10,17 +8,7 @@ const lazyLoader = {
       imageCompression = module.default;
     }
     return imageCompression;
-  },
-
-  async loadWorkerManager() {
-    if (!ImageWorkerManager) {
-      const module = await import('../worker-manager.js');
-      ImageWorkerManager = module.default;
-    }
-    return ImageWorkerManager;
   }
-
-  // Métodos de TOAST UI y Fabric eliminados - ahora usamos sistema nativo
 };
 
 export default lazyLoader;

@@ -6,7 +6,6 @@ const state = {
   currentFormatConfig: null,
   lastConversionTime: { value: 0 },
   securityToken: { value: null },
-  workerManager: null,
   CONFIG
 };
 

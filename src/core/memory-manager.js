@@ -1,4 +1,4 @@
-// Gestión de object URLs y memoria para blobs
+// Object URL and memory management for blobs
 const memoryManager = {
   objectUrls: new Set(),
   stats: { created: 0, revoked: 0, leaked: 0 },

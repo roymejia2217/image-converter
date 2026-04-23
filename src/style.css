@@ -1,8 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Configuración base optimizada */
+/* Base */
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
@@ -11,32 +7,44 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Estilos personalizados para el slider optimizados */
+* {
+  box-sizing: border-box;
+}
+
+/* Drop zone */
+#dropZone {
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+
+#dropZone:hover {
+  border-color: var(--bs-primary) !important;
+}
+
+.drop-zone-active {
+  border-color: var(--bs-primary) !important;
+  background-color: var(--bs-primary-bg-subtle) !important;
+  transform: scale(1.01);
+}
+
+/* Slider styling */
 .slider {
   -webkit-appearance: none;
   appearance: none;
-  background: #e5e7eb;
+  background: var(--bs-secondary-bg);
   cursor: pointer;
   height: 8px;
   border-radius: 4px;
   outline: none;
   border: none;
   transition: background-color 0.2s ease;
+  width: 100%;
 }
 
 .slider:hover {
-  background: #d1d5db;
+  background: var(--bs-tertiary-bg);
 }
 
-.dark .slider {
-  background: #4b5563;
-}
-
-.dark .slider:hover {
-  background: #6b7280;
-}
-
-/* Optimización de webkit para sliders */
 .slider::-webkit-slider-track {
   background: transparent;
   height: 8px;
@@ -46,7 +54,7 @@ body {
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  background: #3b82f6;
+  background: var(--bs-primary);
   height: 20px;
   width: 20px;
   border-radius: 50%;
@@ -60,16 +68,6 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.dark .slider::-webkit-slider-thumb {
-  background: #60a5fa;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.dark .slider::-webkit-slider-thumb:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-}
-
-/* Optimización de Firefox para sliders */
 .slider::-moz-range-track {
   background: transparent;
   height: 8px;
@@ -78,7 +76,7 @@ body {
 }
 
 .slider::-moz-range-thumb {
-  background: #3b82f6;
+  background: var(--bs-primary);
   height: 20px;
   width: 20px;
   border-radius: 50%;
@@ -93,91 +91,49 @@ body {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.dark .slider::-moz-range-thumb {
-  background: #60a5fa;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+/* File list items */
+.file-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background-color: var(--bs-secondary-bg);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: 60px;
+  max-width: 100%;
+  overflow: hidden;
 }
 
-.dark .slider::-moz-range-thumb:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+.file-list-item:hover {
+  background-color: var(--bs-tertiary-bg);
+  transform: translateY(-1px);
+  box-shadow: var(--bs-box-shadow-sm);
 }
 
-/* Estilos para elementos de opciones de formato optimizados */
-.format-option {
-  @apply mb-4 p-3 border border-gray-200 rounded-lg bg-gray-50 transition-colors duration-200;
-}
-
-.dark .format-option {
-  @apply border-gray-600 bg-gray-700;
-}
-
-.format-option label {
-  @apply block text-sm font-medium text-gray-700 mb-2 transition-colors duration-200;
-}
-
-.dark .format-option label {
-  @apply text-gray-300;
-}
-
-.format-option select {
-  @apply w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200;
-}
-
-.dark .format-option select {
-  @apply border-gray-600 bg-gray-600 text-white;
-}
-
-.format-option input[type="range"] {
-  @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer transition-colors duration-200;
-}
-
-.dark .format-option input[type="range"] {
-  @apply bg-gray-600;
-}
-
-.format-option input[type="checkbox"] {
-  @apply mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors duration-200;
-}
-
-.dark .format-option input[type="checkbox"] {
-  @apply border-gray-500 bg-gray-600;
-}
-
-/* Estilos para elementos dinámicos generados por JavaScript */
-.dark .format-option input[type="checkbox"]:checked {
-  @apply bg-blue-600 border-blue-600;
-}
-
-.dark .format-option input[type="checkbox"]:focus {
-  @apply ring-blue-500 ring-2;
-}
-
-/* Estilos para tooltips optimizados */
-.dark .tooltip-text {
-  @apply bg-gray-800 text-gray-200 border-gray-600;
-}
-
-.dark .tooltip-text::after {
-  @apply border-gray-800;
-}
-
-/* Estilos para vistas previas en miniatura optimizados */
+/* File preview thumbnail */
 .file-preview-thumbnail {
-  @apply w-12 h-12 flex-shrink-0 mr-3;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  margin-right: 0.75rem;
   border-radius: 8px;
   overflow: hidden;
-  border: 2px solid #e5e7eb;
-  background: #f9fafb;
+  border: 2px solid var(--bs-border-color);
+  background: var(--bs-body-bg);
   transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
 .file-preview-thumbnail:hover {
-  border-color: #3b82f6;
+  border-color: var(--bs-primary);
   transform: scale(1.05);
 }
 
 .file-preview-thumbnail img {
-  @apply w-full h-full object-cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   min-height: 48px;
   transition: transform 0.2s ease;
 }
@@ -186,82 +142,115 @@ body {
   transform: scale(1.05);
 }
 
-/* Estilos para lista de archivos optimizados */
-.file-list-item {
-  @apply flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2 hover:bg-gray-100 transition-all duration-200;
-  border: 1px solid #e5e7eb;
-  min-height: 60px;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-.dark .file-list-item {
-  @apply bg-gray-700 hover:bg-gray-600;
-  border: 1px solid #4b5563;
-}
-
-.file-list-item:hover {
-  @apply shadow-sm;
-  border-color: #d1d5db;
-  transform: translateY(-1px);
-}
-
-.dark .file-list-item:hover {
-  border-color: #6b7280;
-}
-
-/* Contenedor de la lista de archivos */
-#fileList {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* Estilos para botón de eliminar optimizados */
-.remove-file-btn {
-  @apply ml-3 text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-all duration-200 flex-shrink-0;
-}
-
-.dark .remove-file-btn {
-  @apply text-red-400 hover:text-red-300 hover:bg-red-900/20;
-}
-
-.remove-file-btn:hover {
-  @apply shadow-sm;
-  transform: scale(1.1);
-}
-
-/* Estilos para información de archivo optimizados */
+/* File info */
 .file-info {
-  @apply flex-1 min-w-0;
-  max-width: calc(100% - 60px); /* Espacio para el botón de eliminar */
+  flex: 1;
+  min-width: 0;
+  max-width: calc(100% - 60px);
 }
 
 .file-name {
-  @apply text-sm font-medium text-gray-700;
+  font-size: 0.875rem;
+  font-weight: 500;
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
-}
-
-.dark .file-name {
-  @apply text-gray-300;
+  color: var(--bs-body-color);
 }
 
 .file-size {
-  @apply text-xs text-gray-500;
+  font-size: 0.75rem;
+  color: var(--bs-secondary-color);
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.dark .file-size {
-  @apply text-gray-400;
+/* Remove file button */
+.remove-file-btn {
+  margin-left: 0.75rem;
+  color: var(--bs-danger);
+  padding: 0.25rem;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Animaciones personalizadas optimizadas */
+.remove-file-btn:hover {
+  background-color: var(--bs-danger-bg-subtle);
+  transform: scale(1.1);
+}
+
+/* Format option card */
+.format-option {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--bs-border-radius);
+  background-color: var(--bs-secondary-bg);
+}
+
+.format-option label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--bs-body-color);
+}
+
+/* Tooltip */
+.tooltip-text {
+  visibility: hidden;
+  min-width: 150px;
+  max-width: 300px;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px 12px;
+  position: absolute;
+  z-index: 1000;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  white-space: normal;
+  word-wrap: break-word;
+  pointer-events: none;
+  border: 1px solid var(--bs-border-color);
+}
+
+.tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--bs-body-bg) transparent transparent transparent;
+}
+
+.format-option label:hover .tooltip-text,
+.format-option .d-flex:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -277,113 +266,22 @@ body {
   animation: fadeIn 0.3s ease-out;
 }
 
-/* Mejoras para el drop zone optimizadas */
-.drop-zone-active {
-  border-color: #3b82f6 !important;
-  background-color: #eff6ff !important;
-  transform: scale(1.02);
-}
-
-/* Mejoras para botones optimizados */
-.btn-primary {
-  @apply bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
-}
-
-.btn-secondary {
-  @apply bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-all duration-200 font-medium;
-}
-
-.btn-secondary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Estilos para el contenedor principal optimizado */
-.main-container {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-}
-
-/* Mejoras para inputs y selects optimizados */
-.form-input {
-  @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200;
-}
-
-.form-input:focus {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
-}
-
-.form-select {
-  @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200;
-}
-
-.form-select:focus {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
-}
-
-/* Estilos para la previsualización de imagen optimizados */
-.image-preview-container {
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.image-preview-container:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 12px -1px rgba(0, 0, 0, 0.15);
-}
-
-.image-preview-container img {
-  transition: transform 0.3s ease;
-}
-
-.image-preview-container:hover img {
-  transform: scale(1.05);
-}
-
-/* Estilos para el botón de eliminar optimizados */
-.remove-btn {
-  @apply absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-all duration-200;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.remove-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-/* Mejoras para el estado de carga optimizadas */
-.loading-spinner {
-  @apply animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600;
-}
-
-/* Estilos para mensajes de error optimizados */
-.error-message {
-  @apply p-3 bg-red-50 border border-red-200 rounded-lg;
-  animation: shake 0.5s ease-in-out;
-}
-
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-5px); }
   75% { transform: translateX(5px); }
 }
 
-/* Estilos para notificaciones optimizados */
-.notification-enter {
+.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Toast notification */
+.toast-enter {
   animation: slideInRight 0.3s ease-out;
 }
 
-.notification-exit {
+.toast-exit {
   animation: slideOutRight 0.3s ease-in;
 }
 
@@ -409,85 +307,39 @@ body {
   }
 }
 
-/* Estilos para tooltips optimizados */
-.format-option label {
+/* Image preview container */
+.image-preview-container {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.format-option .flex.items-center {
-  position: relative;
-}
-
-.tooltip-text {
-  visibility: hidden;
-  min-width: 150px;
-  max-width: 300px;
-  background-color: #f9fafb; /* fondo claro */
-  color: #1f2937;            /* texto oscuro */
-  text-align: center;
-  border-radius: 6px;
-  padding: 8px 12px;
-  position: absolute;
-  z-index: 1000;
-  bottom: 125%;
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  font-size: 12px;
-  line-height: 1.4;
+  overflow: hidden;
+  border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  white-space: normal;
-  word-wrap: break-word;
-  pointer-events: none;
-  border: 1px solid #e5e7eb;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.tooltip-text::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: #f9fafb transparent transparent transparent;
+.image-preview-container:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 12px -1px rgba(0, 0, 0, 0.15);
 }
 
-.dark .tooltip-text {
-  background-color: #1f2937;
-  color: #f9fafb;
-  border: 1px solid #4b5563;
+.image-preview-container img {
+  transition: transform 0.3s ease;
 }
 
-.dark .tooltip-text::after {
-  border-color: #1f2937 transparent transparent transparent;
+.image-preview-container:hover img {
+  transform: scale(1.05);
 }
 
-.format-option label:hover .tooltip-text,
-.format-option .flex.items-center:hover .tooltip-text {
-  visibility: visible;
-  opacity: 1;
-}
-
-/* Optimizaciones de rendimiento */
-* {
-  box-sizing: border-box;
-}
-
-/* Optimización para dispositivos móviles */
+/* Mobile optimizations */
 @media (max-width: 768px) {
   .file-list-item {
     min-height: 50px;
   }
-  
+
   .file-preview-thumbnail {
-    @apply w-10 h-10;
+    width: 40px;
+    height: 40px;
   }
-  
+
   .tooltip-text {
     min-width: 120px;
     max-width: 250px;
@@ -495,606 +347,10 @@ body {
   }
 }
 
-/* Optimización para pantallas de alta densidad */
+/* High DPI screens */
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
   .file-preview-thumbnail img {
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
-  }
-}
-
-/* Optimización para modo oscuro en transiciones */
-.dark * {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 200ms;
-}
-
-/* Estilos para botones de edición */
-.edit-file-btn {
-  @apply p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200;
-}
-
-.dark .edit-file-btn {
-  @apply text-gray-400 hover:text-blue-400 hover:bg-blue-900;
-}
-
-.edit-file-btn:hover {
-  @apply transform scale-105;
-}
-
-/* Estilos para el modal de edición */
-#imageEditorModal {
-  backdrop-filter: blur(4px);
-}
-
-#imageEditorModal .bg-white {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-}
-
-.dark #imageEditorModal .bg-white {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-/* Estilos para la imagen del editor */
-#editorImage {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  border-radius: 8px;
-}
-
-/* Estilos para CropperJS */
-.cropper-container {
-  border-radius: 8px;
-}
-
-.cropper-view-box {
-  border-radius: 4px;
-}
-
-.cropper-face {
-  background-color: transparent;
-}
-
-/* Estilos completos de CropperJS */
-.cropper-container {
-  direction: ltr;
-  font-size: 0;
-  line-height: 0;
-  position: relative;
-  -ms-touch-action: none;
-  touch-action: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-.cropper-container img {
-  display: block;
-  height: 100%;
-  image-orientation: 0deg;
-  max-height: none !important;
-  max-width: none !important;
-  min-height: 0 !important;
-  min-width: 0 !important;
-  width: 100%;
-}
-
-.cropper-wrap-box {
-  background-color: #000;
-  font-size: 0;
-  line-height: 0;
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  -ms-touch-action: cross-slide-y;
-  touch-action: cross-slide-y;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  outline: 1px solid transparent;
-}
-
-.cropper-canvas {
-  font-size: 0;
-  line-height: 0;
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  -ms-touch-action: none;
-  touch-action: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-.cropper-drag-box {
-  background-color: #fff;
-  opacity: 0;
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-}
-
-.cropper-crop-box {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  box-sizing: border-box;
-  border: 1px solid #39f;
-  border-radius: 1px;
-  outline: 1px solid #fff;
-  outline-color: rgba(255, 255, 255, 0.75);
-  overflow: hidden;
-}
-
-.cropper-view-box {
-  box-sizing: border-box;
-  border: 1px solid #fff;
-  border-radius: 1px;
-  outline: 1px solid #39f;
-  outline-color: rgba(51, 153, 255, 0.75);
-  display: block;
-  height: 100%;
-  outline-color: #39f;
-  width: 100%;
-}
-
-.cropper-dashed {
-  border: 0 dashed #eee;
-  display: block;
-  height: 0;
-  position: absolute;
-  top: 50%;
-  width: 0;
-}
-
-.cropper-dashed.dashed-h {
-  border-bottom-width: 1px;
-  border-top-width: 1px;
-  height: 33.33333333%;
-  left: 33.33333333%;
-  top: 33.33333333%;
-  width: 33.33333333%;
-}
-
-.cropper-dashed.dashed-v {
-  border-left-width: 1px;
-  border-right-width: 1px;
-  height: 33.33333333%;
-  left: 33.33333333%;
-  top: 33.33333333%;
-  width: 33.33333333%;
-}
-
-.cropper-center {
-  display: block;
-  height: 0;
-  left: 50%;
-  opacity: 0.75;
-  position: absolute;
-  top: 50%;
-  width: 0;
-}
-
-.cropper-center::before,
-.cropper-center::after {
-  background-color: #eee;
-  content: " ";
-  display: block;
-  position: absolute;
-}
-
-.cropper-center::before {
-  height: 1px;
-  left: -3px;
-  top: -3px;
-  width: 7px;
-}
-
-.cropper-center::after {
-  height: 7px;
-  left: -3px;
-  top: -3px;
-  width: 1px;
-}
-
-.cropper-face {
-  background-color: #fff;
-  display: block;
-  height: 100%;
-  opacity: 0.1;
-  position: absolute;
-  top: 0;
-  width: 100%;
-}
-
-.cropper-line {
-  background-color: #39f;
-  display: block;
-  font-size: 0;
-  height: 100%;
-  opacity: 0.1;
-  position: absolute;
-  top: 0;
-  width: 100%;
-}
-
-.cropper-line.line-e {
-  cursor: e-resize;
-  right: -3px;
-  top: 0;
-  width: 5px;
-}
-
-.cropper-line.line-n {
-  cursor: n-resize;
-  height: 5px;
-  left: 0;
-  top: -3px;
-  width: 100%;
-}
-
-.cropper-line.line-w {
-  cursor: w-resize;
-  height: 100%;
-  left: -3px;
-  top: 0;
-  width: 5px;
-}
-
-.cropper-line.line-s {
-  bottom: -3px;
-  cursor: s-resize;
-  height: 5px;
-  left: 0;
-  width: 100%;
-}
-
-.cropper-point {
-  background-color: #39f;
-  display: block;
-  font-size: 0;
-  height: 5px;
-  opacity: 0.75;
-  position: absolute;
-  top: -3px;
-  width: 5px;
-}
-
-.cropper-point.point-e {
-  cursor: e-resize;
-  margin-top: -3px;
-  right: -3px;
-  top: 50%;
-}
-
-.cropper-point.point-n {
-  cursor: n-resize;
-  left: 50%;
-  margin-left: -3px;
-  top: -3px;
-}
-
-.cropper-point.point-w {
-  cursor: w-resize;
-  left: -3px;
-  margin-top: -3px;
-  top: 50%;
-}
-
-.cropper-point.point-s {
-  bottom: -3px;
-  cursor: s-resize;
-  left: 50%;
-  margin-left: -3px;
-}
-
-.cropper-point.point-ne {
-  cursor: ne-resize;
-  right: -3px;
-  top: -3px;
-}
-
-.cropper-point.point-nw {
-  cursor: nw-resize;
-  left: -3px;
-  top: -3px;
-}
-
-.cropper-point.point-se {
-  bottom: -3px;
-  cursor: se-resize;
-  right: -3px;
-}
-
-.cropper-point.point-sw {
-  bottom: -3px;
-  cursor: sw-resize;
-  left: -3px;
-}
-
-.cropper-invisible {
-  opacity: 0;
-}
-
-.cropper-bg {
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQAQMAAAABPUyAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAADFJREFUCNdjYOD/wMDAUP+PgYHhDwMDQ8Y/BgYGB5j+j4GB4T+D9SC8SiCGHgCkJ/Bc6TZOtQAAAABJRU5ErkJggg==");
-}
-
-.cropper-hide {
-  display: block !important;
-  height: 0 !important;
-  opacity: 0 !important;
-  position: absolute !important;
-  width: 0 !important;
-}
-
-.cropper-hidden {
-  display: none !important;
-}
-
-.cropper-move {
-  cursor: move;
-}
-
-.cropper-crop {
-  cursor: crosshair;
-}
-
-.cropper-disabled .cropper-drag-box,
-.cropper-disabled .cropper-face,
-.cropper-disabled .cropper-line,
-.cropper-disabled .cropper-point {
-  cursor: not-allowed;
-}
-
-/* Estilos para la barra de herramientas */
-#toolbar {
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.dark #toolbar {
-  border: 1px solid rgba(0, 0, 0, 0.2);
-}
-
-/* Estilos para dropdowns */
-#toolbar .group:hover .absolute {
-  animation: dropdownFadeIn 0.2s ease-out;
-}
-
-@keyframes dropdownFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Estilos para dropdowns del editor en modo oscuro */
-/* Estilos para dropdowns del editor en modo oscuro */
-.dark #cropDropdown,
-.dark #rotateDropdown,
-.dark #filterDropdown {
-  background-color: #1f2937 !important;
-  border-color: #374151 !important;
-}
-
-.dark #cropDropdown button,
-.dark #rotateDropdown button,
-.dark #filterDropdown button {
-  color: #f3f4f6 !important;
-}
-
-.dark #cropDropdown button:hover,
-.dark #rotateDropdown button:hover,
-.dark #filterDropdown button:hover {
-  background-color: #374151 !important;
-  color: #ffffff !important;
-}
-
-.dark #cropDropdown .text-blue-700,
-.dark #filterDropdown .text-blue-700 {
-  color: #60a5fa !important;
-}
-
-.dark #cropDropdown .hover\:bg-blue-100:hover,
-.dark #filterDropdown .hover\:bg-blue-100:hover {
-  background-color: #1e3a8a !important;
-  color: #93c5fd !important;
-}
-
-/* Estilos para botones del editor */
-#imageEditorModal button {
-  transition: all 0.2s ease;
-}
-
-#imageEditorModal button:hover {
-  transform: translateY(-1px);
-}
-
-#imageEditorModal button:active {
-  transform: translateY(0);
-}
-
-/* Estilos para botones activos */
-#imageEditorModal button.active {
-  @apply bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300;
-}
-
-/* Estilos para botones de recorte activos */
-#cropDropdown button.bg-blue-100,
-#cropDropdown button.dark\:bg-blue-900 {
-  background-color: #dbeafe !important;
-  color: #1d4ed8 !important;
-}
-
-.dark #cropDropdown button.bg-blue-100,
-.dark #cropDropdown button.dark\:bg-blue-900 {
-  background-color: #1e3a8a !important;
-  color: #93c5fd !important;
-}
-
-/* Estilos para botones de filtro activos */
-#filterDropdown button.bg-blue-100,
-#filterDropdown button.dark\:bg-blue-900 {
-  background-color: #dbeafe !important;
-  color: #1d4ed8 !important;
-}
-
-.dark #filterDropdown button.bg-blue-100,
-.dark #filterDropdown button.dark\:bg-blue-900 {
-  background-color: #1e3a8a !important;
-  color: #93c5fd !important;
-}
-
-/* Animaciones para el modal */
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-#imageEditorModal > div {
-  animation: modalFadeIn 0.3s ease-out;
-}
-
-/* Estilos responsivos específicos para el editor modal */
-@media (max-width: 640px) {
-  #imageEditorModal .max-w-xs {
-    max-width: 95vw;
-    margin: 0.5rem;
-  }
-  
-  #imageEditorModal .p-2 {
-    padding: 0.75rem;
-  }
-  
-  #imageEditorModal .space-y-2 > * + * {
-    margin-top: 0.5rem;
-  }
-  
-  /* Canvas más pequeño en móviles */
-  #image-editor-canvas {
-    max-height: 30vh !important;
-  }
-  
-  /* Panel de filtros más compacto */
-  #filters-container {
-    max-height: 35vh;
-  }
-  
-  /* Header más compacto en móviles */
-  #imageEditorModal .p-6 {
-    padding: 1rem;
-  }
-  
-  /* Botones más grandes para touch */
-  #imageEditorModal button {
-    min-height: 44px;
-    min-width: 44px;
-  }
-}
-
-@media (min-width: 641px) and (max-width: 1024px) {
-  #imageEditorModal .max-w-sm {
-    max-width: 90vw;
-  }
-  
-  #image-editor-canvas {
-    max-height: 50vh !important;
-  }
-  
-  /* Panel de filtros en tablets */
-  #filters-container {
-    max-height: 45vh;
-  }
-}
-
-@media (min-width: 1025px) {
-  #imageEditorModal .max-w-2xl {
-    max-width: 80vw;
-  }
-  
-  #imageEditorModal .max-w-4xl {
-    max-width: 85vw;
-  }
-  
-  #imageEditorModal .max-w-6xl {
-    max-width: 90vw;
-  }
-}
-
-/* Mejoras para touch en móviles */
-@media (hover: none) and (pointer: coarse) {
-  .filter-toggle {
-    min-height: 44px; /* Tamaño mínimo para touch */
-  }
-  
-  .filter-toggle button {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Espaciado adicional para touch */
-  .filter-toggle .space-x-2 > * + * {
-    margin-left: 0.75rem;
-  }
-}
-
-/* Estilos responsivos para el editor (legacy - mantener compatibilidad) */
-@media (max-width: 1024px) {
-  #imageEditorModal .max-w-6xl {
-    max-width: 95vw;
-  }
-  
-  #toolbar {
-    position: fixed !important;
-    top: 1rem !important;
-    left: 1rem !important;
-    right: 1rem !important;
-    transform: none !important;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 768px) {
-  #imageEditorModal .mx-4 {
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
-  }
-  
-  #imageEditorModal .max-h-\[95vh\] {
-    max-height: 95vh;
-  }
-  
-  #toolbar {
-    padding: 0.5rem;
-  }
-  
-  #toolbar button {
-    padding: 0.5rem;
   }
 }
