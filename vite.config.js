@@ -6,7 +6,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['browser-image-compression'],
           utils: ['jszip'],
         },
         assetFileNames: (assetInfo) => {
@@ -46,7 +45,7 @@ export default defineConfig({
   },
   plugins: [],
   optimizeDeps: {
-    include: ['browser-image-compression', 'jszip'],
+    include: ['jszip'],
   },
   assetsInclude: ['**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.svg'],
   publicDir: 'public',

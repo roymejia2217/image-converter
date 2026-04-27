@@ -1,8 +1,21 @@
 import state from '../core/state.js';
 import eventHandlers from '../handlers/event-handlers.js';
 import utils from '../utils/utils.js';
+import { OUTPUT_FORMATS } from '../config/app-config.js';
 
 const elements = {};
+
+function populateFormatSelect() {
+  const select = document.getElementById('formatSelect');
+  if (!select) return;
+  select.innerHTML = '';
+  OUTPUT_FORMATS.forEach(({ value, label }) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    select.appendChild(option);
+  });
+}
 
 const init = async () => {
   // Initialize DOM elements
@@ -37,7 +50,8 @@ const init = async () => {
   elements.formatSelect.addEventListener('change', () => eventHandlers.updateFormatOptions(state, elements));
   elements.darkModeToggle.addEventListener('click', () => utils.toggleDarkMode(elements));
 
-  // Initialize format options
+  // Populate format select and initialize format options
+  populateFormatSelect();
   eventHandlers.updateFormatOptions(state, elements);
 
   // Prevent default navigation in drop zone

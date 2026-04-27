@@ -95,6 +95,8 @@ describe('getFormatExtension', () => {
     expect(utils.getFormatExtension('image/jpeg')).toBe('jpg');
     expect(utils.getFormatExtension('image/png')).toBe('png');
     expect(utils.getFormatExtension('image/webp')).toBe('webp');
+    expect(utils.getFormatExtension('image/gif')).toBe('gif');
+    expect(utils.getFormatExtension('image/bmp')).toBe('bmp');
     expect(utils.getFormatExtension('unknown')).toBe('jpg');
   });
 });
@@ -151,5 +153,20 @@ describe('validateInputParams', () => {
   it('returns errors for out-of-range quality', () => {
     expect(utils.validateInputParams({ initialQuality: 0.05 }).length).toBeGreaterThan(0);
     expect(utils.validateInputParams({ initialQuality: 1.5 }).length).toBeGreaterThan(0);
+  });
+
+  it('validates maxColors for GIF', () => {
+    expect(utils.validateInputParams({ maxColors: 128 })).toEqual([]);
+    expect(utils.validateInputParams({ maxColors: 2 })).toEqual([]);
+    expect(utils.validateInputParams({ maxColors: 256 })).toEqual([]);
+    expect(utils.validateInputParams({ maxColors: 1 }).length).toBeGreaterThan(0);
+    expect(utils.validateInputParams({ maxColors: 512 }).length).toBeGreaterThan(0);
+  });
+
+  it('validates bitDepth for BMP', () => {
+    expect(utils.validateInputParams({ bitDepth: 24 })).toEqual([]);
+    expect(utils.validateInputParams({ bitDepth: 32 })).toEqual([]);
+    expect(utils.validateInputParams({ bitDepth: 8 }).length).toBeGreaterThan(0);
+    expect(utils.validateInputParams({ bitDepth: 16 }).length).toBeGreaterThan(0);
   });
 });

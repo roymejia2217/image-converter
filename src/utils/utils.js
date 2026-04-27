@@ -107,7 +107,27 @@ const utils = {
         errors.push('Quality must be between 0.1 and 1.0');
       }
     }
+    if (params.maxColors !== undefined) {
+      const c = parseInt(params.maxColors, 10);
+      if (isNaN(c) || c < 2 || c > 256) {
+        errors.push('Max Colors must be between 2 and 256');
+      }
+    }
+    if (params.bitDepth !== undefined) {
+      const b = parseInt(params.bitDepth, 10);
+      if (b !== 24 && b !== 32) {
+        errors.push('Bit Depth must be 24 or 32');
+      }
+    }
     return errors;
+  },
+
+  async verifyOutputFormat(blob, expectedMimeType) {
+    const magicBytes = CONFIG.MAGIC_BYTES[expectedMimeType];
+    if (!magicBytes) return true;
+    const buffer = await blob.slice(0, magicBytes.length).arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    return magicBytes.every((byte, index) => bytes[index] === byte);
   },
 
   checkRateLimit(lastConversionTimeRef) {

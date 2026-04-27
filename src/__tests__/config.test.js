@@ -6,8 +6,8 @@ describe('app-config.js', () => {
   it('exports APP_CONFIG with required constants', () => {
     expect(APP_CONFIG.MAX_FILE_SIZE).toBe(10 * 1024 * 1024);
     expect(APP_CONFIG.MAX_FILES).toBe(20);
-    expect(APP_CONFIG.SUPPORTED_FORMATS).toEqual(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
-    expect(APP_CONFIG.ALLOWED_FILE_EXTENSIONS).toEqual(['.jpg', '.jpeg', '.png', '.webp']);
+    expect(APP_CONFIG.SUPPORTED_FORMATS).toEqual(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/bmp']);
+    expect(APP_CONFIG.ALLOWED_FILE_EXTENSIONS).toEqual(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp']);
     expect(APP_CONFIG.DEFAULT_QUALITY).toBe(0.9);
     expect(APP_CONFIG.RATE_LIMIT_DELAY).toBe(1000);
   });
@@ -16,11 +16,15 @@ describe('app-config.js', () => {
     expect(MAGIC_BYTES['image/jpeg']).toEqual([0xFF, 0xD8, 0xFF]);
     expect(MAGIC_BYTES['image/png']).toEqual([0x89, 0x50, 0x4E, 0x47]);
     expect(MAGIC_BYTES['image/webp']).toEqual([0x52, 0x49, 0x46, 0x46]);
+    expect(MAGIC_BYTES['image/gif']).toEqual([0x47, 0x49, 0x46, 0x38]);
+    expect(MAGIC_BYTES['image/bmp']).toEqual([0x42, 0x4D]);
   });
 
-  it('exports OUTPUT_FORMATS with only JPEG, PNG, WebP', () => {
-    expect(OUTPUT_FORMATS).toHaveLength(3);
-    expect(OUTPUT_FORMATS.map(f => f.value)).toEqual(['image/jpeg', 'image/png', 'image/webp']);
+  it('exports OUTPUT_FORMATS with all 5 formats', () => {
+    expect(OUTPUT_FORMATS).toHaveLength(5);
+    expect(OUTPUT_FORMATS.map(f => f.value)).toEqual([
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'
+    ]);
   });
 
   it('exports QUALITY_CONFIG with 0.1-1.0 scale', () => {
@@ -32,13 +36,16 @@ describe('app-config.js', () => {
 });
 
 describe('format-configs.js', () => {
-  it('only contains JPEG, PNG, and WebP configs', () => {
-    expect(Object.keys(FORMAT_CONFIGS)).toEqual(['image/jpeg', 'image/png', 'image/webp']);
+  it('contains all 5 format configs', () => {
+    expect(Object.keys(FORMAT_CONFIGS)).toEqual([
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'
+    ]);
   });
 
-  it('JPEG has initialQuality option with correct scale', () => {
+  it('JPEG has canvas encoder and initialQuality option', () => {
     const jpeg = FORMAT_CONFIGS['image/jpeg'];
     expect(jpeg.extension).toBe('jpg');
+    expect(jpeg.encoder).toBe('canvas');
     expect(jpeg.options.initialQuality).toBeDefined();
     expect(jpeg.options.initialQuality.min).toBe(0.1);
     expect(jpeg.options.initialQuality.max).toBe(1.0);
@@ -46,16 +53,40 @@ describe('format-configs.js', () => {
     expect(jpeg.options.initialQuality.default).toBe(0.9);
   });
 
-  it('PNG has no options', () => {
+  it('PNG has canvas encoder and no options', () => {
     const png = FORMAT_CONFIGS['image/png'];
     expect(png.extension).toBe('png');
+    expect(png.encoder).toBe('canvas');
     expect(Object.keys(png.options)).toHaveLength(0);
   });
 
-  it('WebP has initialQuality option', () => {
+  it('WebP has canvas encoder and initialQuality option', () => {
     const webp = FORMAT_CONFIGS['image/webp'];
     expect(webp.extension).toBe('webp');
+    expect(webp.encoder).toBe('canvas');
     expect(webp.options.initialQuality).toBeDefined();
     expect(webp.options.initialQuality.default).toBe(0.85);
+  });
+
+  it('GIF has gif encoder and maxColors option', () => {
+    const gif = FORMAT_CONFIGS['image/gif'];
+    expect(gif.extension).toBe('gif');
+    expect(gif.encoder).toBe('gif');
+    expect(gif.options.maxColors).toBeDefined();
+    expect(gif.options.maxColors.min).toBe(2);
+    expect(gif.options.maxColors.max).toBe(256);
+    expect(gif.options.maxColors.step).toBe(1);
+    expect(gif.options.maxColors.default).toBe(128);
+  });
+
+  it('BMP has bmp encoder and bitDepth option', () => {
+    const bmp = FORMAT_CONFIGS['image/bmp'];
+    expect(bmp.extension).toBe('bmp');
+    expect(bmp.encoder).toBe('bmp');
+    expect(bmp.options.bitDepth).toBeDefined();
+    expect(bmp.options.bitDepth.min).toBe(24);
+    expect(bmp.options.bitDepth.max).toBe(32);
+    expect(bmp.options.bitDepth.step).toBe(8);
+    expect(bmp.options.bitDepth.default).toBe(24);
   });
 });

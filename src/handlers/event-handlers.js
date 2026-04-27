@@ -1,8 +1,8 @@
 import utils from '../utils/utils.js';
 import performanceMetrics from '../core/metrics.js';
-import lazyLoader from '../core/lazy-loader.js';
 import memoryManager from '../core/memory-manager.js';
 import FORMAT_CONFIGS from '../config/format-configs.js';
+import { encodeBMP, encodeGIF, encodeCanvas, getImageData } from '../utils/encoders.js';
 
 const eventHandlers = {
   async handleFileSelect(event, state, elements) {
@@ -257,33 +257,43 @@ const eventHandlers = {
   },
 
   async performConversionSync(targetFormat, formatOptions, state, elements) {
-    const imageCompression = await lazyLoader.loadImageCompression();
     const convertedFiles = [];
     const totalFiles = state.currentFiles.length;
+    const formatConfig = FORMAT_CONFIGS[targetFormat];
 
     for (let i = 0; i < totalFiles; i++) {
       try {
         const file = state.currentFiles[i];
-        const formatConfig = FORMAT_CONFIGS[targetFormat];
-        const defaultQuality = formatConfig.options.initialQuality ? formatConfig.options.initialQuality.default : 0.9;
-        const quality = formatOptions.initialQuality !== undefined ? formatOptions.initialQuality : defaultQuality;
+        const { imageData, canvas } = await getImageData(file, state.CONFIG.MAX_WIDTH_HEIGHT);
 
-        const options = {
-          maxSizeMB: state.CONFIG.MAX_SIZE_MB,
-          maxWidthOrHeight: state.CONFIG.MAX_WIDTH_HEIGHT,
-          useWebWorker: false,
-          fileType: targetFormat,
-          initialQuality: quality,
-          onProgress: () => {}
-        };
+        let outputBlob;
+        if (formatConfig.encoder === 'canvas') {
+          const quality = formatOptions.initialQuality !== undefined
+            ? formatOptions.initialQuality
+            : (formatConfig.options.initialQuality?.default || 0.9);
+          outputBlob = await encodeCanvas(canvas, targetFormat, quality);
+        } else if (formatConfig.encoder === 'bmp') {
+          const bitDepth = formatOptions.bitDepth || 24;
+          outputBlob = encodeBMP(imageData, bitDepth);
+        } else if (formatConfig.encoder === 'gif') {
+          const maxColors = formatOptions.maxColors || 128;
+          outputBlob = await encodeGIF(imageData, maxColors);
+        } else {
+          throw new Error('Unknown encoder: ' + formatConfig.encoder);
+        }
 
-        const compressedFile = await imageCompression(file, options);
-        const originalName = file.name.split('.')[0];
+        // Verify output format
+        const isValid = await utils.verifyOutputFormat(outputBlob, targetFormat);
+        if (!isValid) {
+          throw new Error('Output verification failed: file does not match expected format');
+        }
+
+        const originalName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
         const extension = utils.getFormatExtension(targetFormat);
         const fileName = utils.sanitizeFileName(`${originalName}_converted.${extension}`);
-        convertedFiles.push({ file: compressedFile, fileName });
+        convertedFiles.push({ file: outputBlob, fileName });
 
-        // Update progress bar per file
+        // Update progress bar
         const progressPercent = Math.round(((i + 1) / totalFiles) * 100);
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
@@ -296,7 +306,7 @@ const eventHandlers = {
         }
       } catch (error) {
         console.error(`Error converting file ${i + 1}:`, error);
-        throw new Error(`Error converting file ${i + 1}`);
+        throw new Error(`Error converting file ${i + 1}: ${error.message}`);
       }
     }
 

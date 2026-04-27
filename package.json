@@ -14,8 +14,8 @@
   "dependencies": {
     "bootstrap": "^5.3.3",
     "bootstrap-icons": "^1.13.1",
-    "browser-image-compression": "^2.0.2",
-    "jszip": "^3.10.1"
+    "jszip": "^3.10.1",
+    "omggif": "^1.0.10"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^2.1.0",
