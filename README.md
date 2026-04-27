@@ -4,13 +4,14 @@ A lightweight, client-side image conversion tool built as a vanilla JavaScript S
 
 ## Overview
 
-Image Converter allows users to upload images and convert them between JPEG, PNG, and WebP formats. The application features a clean Bootstrap 5 interface, quality control, batch processing with ZIP export, and a fully functional progress indicator.
+Image Converter allows users to upload images and convert them between JPEG, PNG, WebP, GIF, and BMP formats. The application features a clean Bootstrap 5 interface, format-specific parameters, batch processing with ZIP export, and a fully functional progress indicator. All conversions are verified against magic bytes to ensure output integrity.
 
 ## Key Features
 
-- **Format Conversion**: Supports JPEG, PNG, and WebP with configurable quality settings.
+- **Format Conversion**: Supports JPEG, PNG, WebP, GIF, and BMP with format-specific parameters.
 - **Batch Processing**: Convert multiple files at once and download them as a ZIP archive.
-- **Quality Slider**: Adjustable quality from 0.1 to 1.0 for JPEG and WebP outputs.
+- **Format-Specific Parameters**: Quality (0.1-1.0) for JPEG/WebP, Max Colors (2-256) for GIF, Bit Depth (24/32) for BMP.
+- **Output Verification**: All converted files are validated against magic bytes to confirm real format conversion.
 - **Dark Mode**: Automatic theme detection with manual toggle support.
 - **Local Processing**: All conversion happens in the browser. No files are uploaded to any server.
 - **Progress Tracking**: Visual progress bar updates per file during conversion.
@@ -21,8 +22,9 @@ Image Converter allows users to upload images and convert them between JPEG, PNG
 - **HTML5** and **CSS3** with Bootstrap 5
 - **JavaScript** (ES6+) following SOLID/DRY/KISS principles
 - **Vite** for bundling and development
-- **browser-image-compression** for efficient image compression
+- **omggif** for GIF encoding with configurable palette
 - **JSZip** for creating ZIP archives of converted files
+- **Custom encoders** (src/utils/encoders.js) for BMP and Canvas-based formats with output verification
 
 ## Project Structure
 
@@ -40,6 +42,7 @@ image-converter/
 │   ├── core/                 # Core modules (state, memory, metrics, lazy loading)
 │   ├── handlers/             # Event handlers
 │   ├── utils/                # Utility functions
+│   │   ├── encoders.js       # Custom encoders for BMP, GIF, and Canvas verification
 │   ├── init/                 # Application initialization
 │   ├── script.js             # Entry point
 │   └── style.css             # Custom styles
