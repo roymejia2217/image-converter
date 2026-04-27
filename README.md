@@ -4,11 +4,11 @@ A lightweight, client-side image conversion tool built as a vanilla JavaScript S
 
 ## Overview
 
-Image Converter allows users to upload images and convert them between JPEG, PNG, WebP, GIF, and BMP formats. The application features a clean Bootstrap 5 interface, format-specific parameters, batch processing with ZIP export, and a fully functional progress indicator. All conversions are verified against magic bytes to ensure output integrity.
+Image Converter allows users to upload images and convert them between JPEG, PNG, WebP, GIF, BMP, and ICO formats. The application features a clean Bootstrap 5 interface, format-specific parameters, batch processing with ZIP export, and a fully functional progress indicator. All conversions are verified against magic bytes to ensure output integrity.
 
 ## Key Features
 
-- **Format Conversion**: Supports JPEG, PNG, WebP, GIF, and BMP with format-specific parameters.
+- **Format Conversion**: Supports JPEG, PNG, WebP, GIF, BMP, and ICO with format-specific parameters.
 - **Batch Processing**: Convert multiple files at once and download them as a ZIP archive.
 - **Format-Specific Parameters**: Quality (0.1-1.0) for JPEG/WebP, Max Colors (2-256) for GIF, Bit Depth (24/32) for BMP.
 - **Output Verification**: All converted files are validated against magic bytes to confirm real format conversion.
@@ -16,6 +16,31 @@ Image Converter allows users to upload images and convert them between JPEG, PNG
 - **Local Processing**: All conversion happens in the browser. No files are uploaded to any server.
 - **Progress Tracking**: Visual progress bar updates per file during conversion.
 - **Responsive Design**: Bootstrap 5 grid system ensures usability on mobile and desktop.
+
+## Supported Formats
+
+| Format | Input | Output |
+|--------|:-----:|:------:|
+| JPEG   |  Yes  |  Yes   |
+| PNG    |  Yes  |  Yes   |
+| WebP   |  Yes  |  Yes   |
+| GIF    |  Yes  |  Yes   |
+| BMP    |  Yes  |  Yes   |
+| ICO    |  Yes  |  Yes   |
+
+## Usage
+
+1. **Add Files**: Click "Add Images" or drag-and-drop files onto the page.
+2. **Select Format**: Choose the target format from the dropdown menu.
+3. **Configure Options**: Adjust format-specific settings as needed.
+4. **Convert**: Click "Convert" to process all files.
+5. **Download**: Click "Download" to save individual files or "Download All" for a ZIP archive.
+
+### ICO-Specific Behavior
+
+**ICO Output**: When converting to ICO, select one or more size presets via checkboxes (16x16, 32x32, 48x48, 64x64, 128x128, 256x256). Each selected size generates a separate icon entry. Sizes below 256 use BMP-derived DIB entries; the 256x256 size uses an embedded PNG.
+
+**ICO Input**: When uploading an ICO file, all embedded icon sizes are extracted and packaged into a ZIP archive of PNG files.
 
 ## Technologies
 

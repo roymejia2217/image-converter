@@ -148,3 +148,79 @@ describe('event-handlers getFormatOptions', () => {
     expect(options.sizePresets).toEqual([]);
   });
 });
+
+describe('event-handlers showSuccessMessage', () => {
+  let state;
+  let elements;
+  let toastEl;
+  let toastMessageEl;
+  let bootstrapBackup;
+
+  beforeEach(() => {
+    state = {
+      currentFiles: [{ name: 'test.jpg', size: 1000, type: 'image/jpeg' }]
+    };
+    elements = {};
+
+    toastEl = document.createElement('div');
+    toastEl.id = 'successToast';
+    toastMessageEl = document.createElement('div');
+    toastMessageEl.id = 'successToastMessage';
+    document.body.appendChild(toastEl);
+    document.body.appendChild(toastMessageEl);
+
+    bootstrapBackup = globalThis.bootstrap;
+    globalThis.bootstrap = {
+      Toast: {
+        getOrCreateInstance: vi.fn(() => ({ show: vi.fn() }))
+      }
+    };
+
+    vi.spyOn(utils, 'icon').mockReturnValue('<i class="bi bi-check-lg"></i>');
+    vi.spyOn(utils, 'sanitizeText').mockImplementation((text) => text);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+    globalThis.bootstrap = bootstrapBackup;
+    document.body.innerHTML = '';
+  });
+
+  it('shows default message "Conversion successful" when no customMessage is provided', () => {
+    eventHandlers.showSuccessMessage(state, 500, elements);
+    expect(globalThis.bootstrap.Toast.getOrCreateInstance).toHaveBeenCalledWith(toastEl);
+    expect(toastMessageEl.textContent).toBe('Conversion successful');
+  });
+
+  it('uses customMessage when provided', () => {
+    eventHandlers.showSuccessMessage(state, 500, elements, 'Custom success message');
+    expect(toastMessageEl.textContent).toBe('Custom success message');
+  });
+
+  it('uses DOM fallback when bootstrap is unavailable', () => {
+    globalThis.bootstrap = undefined;
+    eventHandlers.showSuccessMessage(state, 500, elements);
+
+    const notification = document.body.querySelector('.alert.alert-success');
+    expect(notification).not.toBeNull();
+    expect(notification.textContent).toContain('Conversion successful');
+  });
+
+  it('auto-removes fallback notification after 3 seconds', () => {
+    globalThis.bootstrap = undefined;
+    vi.useFakeTimers();
+
+    eventHandlers.showSuccessMessage(state, 500, elements);
+    const notification = document.body.querySelector('.alert.alert-success');
+    expect(document.body.contains(notification)).toBe(true);
+
+    vi.advanceTimersByTime(3000);
+    expect(document.body.contains(notification)).toBe(false);
+  });
+
+  it('does not include "Reduction" text in the default message (regression guard)', () => {
+    eventHandlers.showSuccessMessage(state, 500, elements);
+    expect(toastMessageEl.textContent).not.toContain('Reduction');
+  });
+});

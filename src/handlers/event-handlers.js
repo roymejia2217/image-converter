@@ -402,9 +402,7 @@ const eventHandlers = {
   showSuccessMessage(state, compressedSize, elements, customMessage = null) {
     let message = customMessage;
     if (!message) {
-      const totalOriginalSize = state.currentFiles.reduce((sum, file) => sum + file.size, 0);
-      const reduction = totalOriginalSize > 0 ? ((totalOriginalSize - compressedSize) / totalOriginalSize * 100).toFixed(1) : 0;
-      message = `Conversion successful - Reduction: ${reduction}%`;
+      message = 'Conversion successful';
     }
 
     const toastEl = document.getElementById('successToast');
