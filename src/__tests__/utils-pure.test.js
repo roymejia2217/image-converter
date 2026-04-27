@@ -97,6 +97,7 @@ describe('getFormatExtension', () => {
     expect(utils.getFormatExtension('image/webp')).toBe('webp');
     expect(utils.getFormatExtension('image/gif')).toBe('gif');
     expect(utils.getFormatExtension('image/bmp')).toBe('bmp');
+    expect(utils.getFormatExtension('image/x-icon')).toBe('ico');
     expect(utils.getFormatExtension('unknown')).toBe('jpg');
   });
 });
@@ -168,5 +169,13 @@ describe('validateInputParams', () => {
     expect(utils.validateInputParams({ bitDepth: 32 })).toEqual([]);
     expect(utils.validateInputParams({ bitDepth: 8 }).length).toBeGreaterThan(0);
     expect(utils.validateInputParams({ bitDepth: 16 }).length).toBeGreaterThan(0);
+  });
+
+  it('validates sizePresets for ICO', () => {
+    expect(utils.validateInputParams({ sizePresets: [32, 64] })).toEqual([]);
+    expect(utils.validateInputParams({ sizePresets: [16, 32, 48, 64, 128, 256] })).toEqual([]);
+    expect(utils.validateInputParams({ sizePresets: [] }).length).toBeGreaterThan(0);
+    expect(utils.validateInputParams({ sizePresets: [32, 999] }).length).toBeGreaterThan(0);
+    expect(utils.validateInputParams({ sizePresets: 'not-array' }).length).toBeGreaterThan(0);
   });
 });

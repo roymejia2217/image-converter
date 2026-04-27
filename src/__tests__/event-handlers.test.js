@@ -79,3 +79,72 @@ describe('event-handlers guard clauses', () => {
     expect(event.target.value).toBe('');
   });
 });
+
+describe('event-handlers getFormatOptions', () => {
+  it('reads range input values', () => {
+    const rangeInput = document.createElement('input');
+    rangeInput.type = 'range';
+    rangeInput.name = 'initialQuality';
+    rangeInput.value = '0.75';
+
+    const container = document.createElement('div');
+    container.appendChild(rangeInput);
+
+    const elements = {
+      formatOptions: container
+    };
+
+    const options = eventHandlers.getFormatOptions(elements);
+    expect(options.initialQuality).toBe(0.75);
+  });
+
+  it('reads checked checkbox values into array', () => {
+    const container = document.createElement('div');
+
+    const cb1 = document.createElement('input');
+    cb1.type = 'checkbox';
+    cb1.name = 'sizePresets';
+    cb1.value = '32';
+    cb1.checked = true;
+    container.appendChild(cb1);
+
+    const cb2 = document.createElement('input');
+    cb2.type = 'checkbox';
+    cb2.name = 'sizePresets';
+    cb2.value = '64';
+    cb2.checked = true;
+    container.appendChild(cb2);
+
+    const cb3 = document.createElement('input');
+    cb3.type = 'checkbox';
+    cb3.name = 'sizePresets';
+    cb3.value = '128';
+    cb3.checked = false;
+    container.appendChild(cb3);
+
+    const elements = {
+      formatOptions: container
+    };
+
+    const options = eventHandlers.getFormatOptions(elements);
+    expect(options.sizePresets).toEqual([32, 64]);
+  });
+
+  it('returns empty array when no checkboxes are checked', () => {
+    const container = document.createElement('div');
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.name = 'sizePresets';
+    cb.value = '32';
+    cb.checked = false;
+    container.appendChild(cb);
+
+    const elements = {
+      formatOptions: container
+    };
+
+    const options = eventHandlers.getFormatOptions(elements);
+    expect(options.sizePresets).toEqual([]);
+  });
+});

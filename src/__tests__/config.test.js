@@ -6,8 +6,8 @@ describe('app-config.js', () => {
   it('exports APP_CONFIG with required constants', () => {
     expect(APP_CONFIG.MAX_FILE_SIZE).toBe(10 * 1024 * 1024);
     expect(APP_CONFIG.MAX_FILES).toBe(20);
-    expect(APP_CONFIG.SUPPORTED_FORMATS).toEqual(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/bmp']);
-    expect(APP_CONFIG.ALLOWED_FILE_EXTENSIONS).toEqual(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp']);
+    expect(APP_CONFIG.SUPPORTED_FORMATS).toEqual(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/x-icon', 'image/vnd.microsoft.icon']);
+    expect(APP_CONFIG.ALLOWED_FILE_EXTENSIONS).toEqual(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.ico']);
     expect(APP_CONFIG.DEFAULT_QUALITY).toBe(0.9);
     expect(APP_CONFIG.RATE_LIMIT_DELAY).toBe(1000);
   });
@@ -18,12 +18,14 @@ describe('app-config.js', () => {
     expect(MAGIC_BYTES['image/webp']).toEqual([0x52, 0x49, 0x46, 0x46]);
     expect(MAGIC_BYTES['image/gif']).toEqual([0x47, 0x49, 0x46, 0x38]);
     expect(MAGIC_BYTES['image/bmp']).toEqual([0x42, 0x4D]);
+    expect(MAGIC_BYTES['image/x-icon']).toEqual([0x00, 0x00, 0x01, 0x00]);
+    expect(MAGIC_BYTES['image/vnd.microsoft.icon']).toEqual([0x00, 0x00, 0x01, 0x00]);
   });
 
-  it('exports OUTPUT_FORMATS with all 5 formats', () => {
-    expect(OUTPUT_FORMATS).toHaveLength(5);
+  it('exports OUTPUT_FORMATS with all 6 formats', () => {
+    expect(OUTPUT_FORMATS).toHaveLength(6);
     expect(OUTPUT_FORMATS.map(f => f.value)).toEqual([
-      'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/x-icon'
     ]);
   });
 
@@ -36,9 +38,9 @@ describe('app-config.js', () => {
 });
 
 describe('format-configs.js', () => {
-  it('contains all 5 format configs', () => {
+  it('contains all 6 format configs', () => {
     expect(Object.keys(FORMAT_CONFIGS)).toEqual([
-      'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp', 'image/x-icon'
     ]);
   });
 
@@ -88,5 +90,16 @@ describe('format-configs.js', () => {
     expect(bmp.options.bitDepth.max).toBe(32);
     expect(bmp.options.bitDepth.step).toBe(8);
     expect(bmp.options.bitDepth.default).toBe(24);
+  });
+
+  it('ICO has ico encoder and sizePresets option', () => {
+    const ico = FORMAT_CONFIGS['image/x-icon'];
+    expect(ico.extension).toBe('ico');
+    expect(ico.encoder).toBe('ico');
+    expect(ico.options.sizePresets).toBeDefined();
+    expect(ico.options.sizePresets.label).toBe('Icon Sizes');
+    expect(ico.options.sizePresets.type).toBe('checkbox');
+    expect(ico.options.sizePresets.choices).toEqual([16, 32, 48, 64, 128, 256]);
+    expect(ico.options.sizePresets.default).toEqual([32, 48, 128]);
   });
 });

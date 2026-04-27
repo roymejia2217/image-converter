@@ -62,6 +62,19 @@ const FORMAT_CONFIGS = {
         default: 24
       }
     }
+  },
+  'image/x-icon': {
+    name: 'ICO',
+    extension: 'ico',
+    encoder: 'ico',
+    options: {
+      sizePresets: {
+        label: 'Icon Sizes',
+        type: 'checkbox',
+        choices: [16, 32, 48, 64, 128, 256],
+        default: [32, 48, 128]
+      }
+    }
   }
 };
 

@@ -3,6 +3,8 @@ import performanceMetrics from '../core/metrics.js';
 import memoryManager from '../core/memory-manager.js';
 import FORMAT_CONFIGS from '../config/format-configs.js';
 import { encodeBMP, encodeGIF, encodeCanvas, getImageData } from '../utils/encoders.js';
+import { getImageDataFull, resizeToICOSize } from '../utils/ico-resize.js';
+import { encodeICO, decodeICO, createDIBEntry } from '../utils/ico-encoder.js';
 
 const eventHandlers = {
   async handleFileSelect(event, state, elements) {
@@ -189,9 +191,68 @@ const eventHandlers = {
     elements.formatOptions.querySelectorAll('input, select').forEach(element => {
       if (element.type === 'range') {
         options[element.name] = parseFloat(element.value);
+      } else if (element.type === 'checkbox') {
+        if (!options[element.name]) {
+          options[element.name] = [];
+        }
+        if (element.checked) {
+          options[element.name].push(parseInt(element.value, 10));
+        }
       }
     });
     return options;
+  },
+
+  async convertToICO(file, formatOptions) {
+    const { canvas: sourceCanvas } = await getImageDataFull(file);
+    const sizePresets = formatOptions.sizePresets || [32, 48, 128];
+    if (sizePresets.length === 0) {
+      throw new Error('No icon sizes selected');
+    }
+
+    const entries = [];
+    for (const size of sizePresets) {
+      const resizedCanvas = resizeToICOSize(sourceCanvas, size);
+      const ctx = resizedCanvas.getContext('2d');
+      const resizedImageData = ctx.getImageData(0, 0, size, size);
+
+      if (size < 256) {
+        const dibData = createDIBEntry(resizedImageData);
+        entries.push({ size, data: dibData, isPNG: false });
+      } else {
+        const pngBlob = await encodeCanvas(resizedCanvas, 'image/png');
+        const pngBytes = await pngBlob.arrayBuffer();
+        entries.push({ size, data: pngBytes, isPNG: true });
+      }
+    }
+
+    return encodeICO(entries);
+  },
+
+  async convertFromICO(file) {
+    const buffer = await file.arrayBuffer();
+    const decodedEntries = decodeICO(buffer);
+    const files = [];
+
+    for (const entry of decodedEntries) {
+      let blob;
+      if (entry.pngBlob) {
+        blob = entry.pngBlob;
+      } else {
+        const canvas = document.createElement('canvas');
+        canvas.width = entry.width;
+        canvas.height = entry.height;
+        const ctx = canvas.getContext('2d');
+        ctx.putImageData(entry.imageData, 0, 0);
+        blob = await encodeCanvas(canvas, 'image/png');
+      }
+      files.push({
+        file: blob,
+        fileName: `icon_${entry.width}x${entry.height}.png`
+      });
+    }
+
+    return await utils.createZipFile(files);
   },
 
   async convertImage(state, elements) {
@@ -264,34 +325,51 @@ const eventHandlers = {
     for (let i = 0; i < totalFiles; i++) {
       try {
         const file = state.currentFiles[i];
-        const { imageData, canvas } = await getImageData(file, state.CONFIG.MAX_WIDTH_HEIGHT);
-
-        let outputBlob;
-        if (formatConfig.encoder === 'canvas') {
-          const quality = formatOptions.initialQuality !== undefined
-            ? formatOptions.initialQuality
-            : (formatConfig.options.initialQuality?.default || 0.9);
-          outputBlob = await encodeCanvas(canvas, targetFormat, quality);
-        } else if (formatConfig.encoder === 'bmp') {
-          const bitDepth = formatOptions.bitDepth || 24;
-          outputBlob = encodeBMP(imageData, bitDepth);
-        } else if (formatConfig.encoder === 'gif') {
-          const maxColors = formatOptions.maxColors || 128;
-          outputBlob = await encodeGIF(imageData, maxColors);
-        } else {
-          throw new Error('Unknown encoder: ' + formatConfig.encoder);
-        }
-
-        // Verify output format
-        const isValid = await utils.verifyOutputFormat(outputBlob, targetFormat);
-        if (!isValid) {
-          throw new Error('Output verification failed: file does not match expected format');
-        }
-
         const originalName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-        const extension = utils.getFormatExtension(targetFormat);
-        const fileName = utils.sanitizeFileName(`${originalName}_converted.${extension}`);
-        convertedFiles.push({ file: outputBlob, fileName });
+        let outputBlob;
+        let fileName;
+
+        // Detect ICO input by MIME type or extension
+        const isICOInput = file.type === 'image/x-icon' ||
+          file.type === 'image/vnd.microsoft.icon' ||
+          file.name.toLowerCase().endsWith('.ico');
+
+        if (isICOInput) {
+          outputBlob = await this.convertFromICO(file);
+          fileName = utils.sanitizeFileName(`${originalName}_extracted.zip`);
+          convertedFiles.push({ file: outputBlob, fileName });
+        } else if (targetFormat === 'image/x-icon') {
+          outputBlob = await this.convertToICO(file, formatOptions);
+          fileName = utils.sanitizeFileName(`${originalName}_converted.ico`);
+          convertedFiles.push({ file: outputBlob, fileName });
+        } else {
+          const { imageData, canvas } = await getImageData(file, state.CONFIG.MAX_WIDTH_HEIGHT);
+
+          if (formatConfig.encoder === 'canvas') {
+            const quality = formatOptions.initialQuality !== undefined
+              ? formatOptions.initialQuality
+              : (formatConfig.options.initialQuality?.default || 0.9);
+            outputBlob = await encodeCanvas(canvas, targetFormat, quality);
+          } else if (formatConfig.encoder === 'bmp') {
+            const bitDepth = formatOptions.bitDepth || 24;
+            outputBlob = encodeBMP(imageData, bitDepth);
+          } else if (formatConfig.encoder === 'gif') {
+            const maxColors = formatOptions.maxColors || 128;
+            outputBlob = await encodeGIF(imageData, maxColors);
+          } else {
+            throw new Error('Unknown encoder: ' + formatConfig.encoder);
+          }
+
+          // Verify output format
+          const isValid = await utils.verifyOutputFormat(outputBlob, targetFormat);
+          if (!isValid) {
+            throw new Error('Output verification failed: file does not match expected format');
+          }
+
+          const extension = utils.getFormatExtension(targetFormat);
+          fileName = utils.sanitizeFileName(`${originalName}_converted.${extension}`);
+          convertedFiles.push({ file: outputBlob, fileName });
+        }
 
         // Update progress bar
         const progressPercent = Math.round(((i + 1) / totalFiles) * 100);

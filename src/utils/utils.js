@@ -13,14 +13,35 @@ const utils = {
   },
 
   async isValidImageType(file) {
-    if (!CONFIG.SUPPORTED_FORMATS.includes(file.type)) return false;
     const fileName = file.name.toLowerCase();
     const hasValidExtension = CONFIG.ALLOWED_FILE_EXTENSIONS.some(ext => fileName.endsWith(ext));
     if (!hasValidExtension) return false;
+
+    if (file.type && !CONFIG.SUPPORTED_FORMATS.includes(file.type)) return false;
+
     const magicBytes = CONFIG.MAGIC_BYTES[file.type];
     if (magicBytes) {
       return await this.isValidMagicBytes(file, magicBytes);
     }
+
+    // For files with empty/unknown type, validate by extension and magic bytes
+    if (!file.type) {
+      const extToMime = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.webp': 'image/webp',
+        '.gif': 'image/gif',
+        '.bmp': 'image/bmp',
+        '.ico': 'image/x-icon'
+      };
+      const ext = CONFIG.ALLOWED_FILE_EXTENSIONS.find(e => fileName.endsWith(e));
+      const mimeType = extToMime[ext];
+      if (mimeType && CONFIG.MAGIC_BYTES[mimeType]) {
+        return await this.isValidMagicBytes(file, CONFIG.MAGIC_BYTES[mimeType]);
+      }
+    }
+
     return true;
   },
 
@@ -117,6 +138,17 @@ const utils = {
       const b = parseInt(params.bitDepth, 10);
       if (b !== 24 && b !== 32) {
         errors.push('Bit Depth must be 24 or 32');
+      }
+    }
+    if (params.sizePresets !== undefined) {
+      if (!Array.isArray(params.sizePresets) || params.sizePresets.length === 0) {
+        errors.push('At least one icon size must be selected');
+      } else {
+        const validSizes = [16, 32, 48, 64, 128, 256];
+        const allValid = params.sizePresets.every(s => validSizes.includes(s));
+        if (!allValid) {
+          errors.push('Invalid icon size selected');
+        }
       }
     }
     return errors;
@@ -283,6 +315,38 @@ const utils = {
       }
     } else {
       label.textContent = option.label;
+    }
+
+    if (option.type === 'checkbox' && option.choices) {
+      const checkboxContainer = document.createElement('div');
+      checkboxContainer.className = 'd-flex flex-wrap gap-3';
+
+      option.choices.forEach(choice => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'form-check';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.className = 'form-check-input';
+        cb.name = key;
+        cb.value = choice;
+        cb.id = `${key}_${choice}`;
+        if (option.default && option.default.includes(choice)) {
+          cb.checked = true;
+        }
+
+        const cbLabel = document.createElement('label');
+        cbLabel.className = 'form-check-label';
+        cbLabel.htmlFor = cb.id;
+        cbLabel.textContent = `${choice}x${choice}`;
+
+        wrapper.appendChild(cb);
+        wrapper.appendChild(cbLabel);
+        checkboxContainer.appendChild(wrapper);
+      });
+
+      container.appendChild(label);
+      container.appendChild(checkboxContainer);
     }
 
     if (option.min !== undefined && option.max !== undefined) {
