@@ -339,7 +339,10 @@ const eventHandlers = {
       });
     }
 
-    return await utils.createZipFile(files);
+    if (files.length === 1) {
+      return { blob: files[0].file, fileName: files[0].fileName, isZip: false };
+    }
+    return { blob: await utils.createZipFile(files), fileName: null, isZip: true };
   },
 
   async convertImage(state, elements) {
@@ -422,8 +425,11 @@ const eventHandlers = {
           file.name.toLowerCase().endsWith('.ico');
 
         if (isICOInput) {
-          outputBlob = await this.convertFromICO(file);
-          fileName = utils.sanitizeFileName(`${originalName}_extracted.zip`);
+          const result = await this.convertFromICO(file);
+          outputBlob = result.blob;
+          fileName = result.isZip
+            ? utils.sanitizeFileName(`${originalName}_extracted.zip`)
+            : utils.sanitizeFileName(`${originalName}_${result.fileName}`);
           convertedFiles.push({ file: outputBlob, fileName });
         } else if (targetFormat === 'image/x-icon') {
           outputBlob = await this.convertToICO(file, formatOptions);
