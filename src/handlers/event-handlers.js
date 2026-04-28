@@ -92,7 +92,7 @@ const eventHandlers = {
         });
         state.currentFiles = validFiles;
         utils.hideError(elements);
-        this.updateFileList(state, elements);
+        await this.updateFileList(state, elements);
       }
     } catch (error) {
       console.error('Error in processFiles:', error);
@@ -100,7 +100,7 @@ const eventHandlers = {
     }
   },
 
-  updateFileList(state, elements) {
+  async updateFileList(state, elements) {
     if (!elements.fileList || !elements.fileListContainer) return;
 
     if (state.currentFiles.length === 0) {
@@ -156,9 +156,23 @@ const eventHandlers = {
         previewImg.alt = `Preview of ${file.name}`;
         previewImg.loading = 'lazy';
         previewImg.decoding = 'async';
-        const previewUrl = file.previewUrl || memoryManager.createObjectURL(file);
-        file.previewUrl = previewUrl;
-        previewImg.dataset.src = previewUrl;
+
+        if (file.previewUrl) {
+          previewImg.dataset.src = file.previewUrl;
+        } else if (file.thumbnailBlob) {
+          const previewUrl = memoryManager.createObjectURL(file.thumbnailBlob);
+          file.previewUrl = previewUrl;
+          previewImg.dataset.src = previewUrl;
+        } else {
+          const sourceBlob = file;
+          const previewUrl = memoryManager.createObjectURL(sourceBlob);
+          file.previewUrl = previewUrl;
+          previewImg.dataset.src = previewUrl;
+          utils.createThumbnailBlob(file).then((thumbnailBlob) => {
+            file.thumbnailBlob = thumbnailBlob;
+          }).catch(() => {});
+        }
+
         previewContainer.appendChild(previewImg);
 
         const fileInfo = document.createElement('div');
@@ -234,7 +248,7 @@ const eventHandlers = {
     // Info already shown in the list
   },
 
-  removeAllImages(state, elements) {
+  async removeAllImages(state, elements) {
     lazyLoader.disconnect();
     state.currentFiles.forEach(file => {
       if (file.previewUrl) {
@@ -244,7 +258,7 @@ const eventHandlers = {
     state.currentFiles = [];
     elements.fileInput.value = '';
     elements.fileListContainer.classList.add('d-none');
-    this.updateFileList(state, elements);
+    await this.updateFileList(state, elements);
     utils.hideError(elements);
   },
 

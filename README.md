@@ -16,6 +16,7 @@ Image Converter allows users to upload images and convert them between JPEG, PNG
 - **Local Processing**: All conversion happens in the browser. No files are uploaded to any server.
 - **Progress Tracking**: Visual progress bar updates per file during conversion.
 - **Responsive Design**: Bootstrap 5 grid system ensures usability on mobile and desktop.
+- **Smooth Scrolling & Lazy Loading**: IntersectionObserver-based lazy loading for thumbnails improves performance with many files. Incremental DOM updates append or remove only the affected nodes rather than rebuilding the entire list.
 
 ## Supported Formats
 

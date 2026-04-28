@@ -381,6 +381,29 @@ const utils = {
     return container;
   },
 
+  async createThumbnailBlob(file, maxWidth = 96, maxHeight = 96) {
+    try {
+      const bitmap = await createImageBitmap(file, {
+        resizeWidth: maxWidth,
+        resizeHeight: maxHeight,
+        resizeQuality: 'low'
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bitmap, 0, 0);
+      bitmap.close();
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob || file);
+        }, 'image/jpeg', 0.6);
+      });
+    } catch {
+      return file;
+    }
+  },
+
   icon(name, size) {
     const sizeClass = size ? ` bi-${size}` : '';
     return `<i class="bi bi-${name}${sizeClass}"></i>`;
