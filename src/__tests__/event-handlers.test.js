@@ -1,6 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import eventHandlers from '../handlers/event-handlers.js';
 import utils from '../utils/utils.js';
+import memoryManager from '../core/memory-manager.js';
+import lazyLoader from '../core/lazy-loader.js';
+
+vi.mock('../core/lazy-loader.js', () => ({
+  default: {
+    observe: () => {},
+    unobserve: () => {},
+    disconnect: () => {},
+  }
+}));
 
 describe('event-handlers guard clauses', () => {
   let state;
@@ -222,5 +232,292 @@ describe('event-handlers showSuccessMessage', () => {
   it('does not include "Reduction" text in the default message (regression guard)', () => {
     eventHandlers.showSuccessMessage(state, 500, elements);
     expect(toastMessageEl.textContent).not.toContain('Reduction');
+  });
+});
+
+describe('processFiles', () => {
+  let state;
+  let elements;
+  let file;
+
+  beforeEach(() => {
+    state = {
+      currentFiles: [],
+      isConverting: { value: false },
+      currentFormatConfig: { options: {} },
+      lastConversionTime: { value: 0 },
+      securityToken: { value: null },
+      CONFIG: {
+        MAX_FILES: 20,
+        MAX_FILE_SIZE: 10 * 1024 * 1024,
+        RATE_LIMIT_DELAY: 1000,
+        SECURITY_TIMEOUT: 30000
+      }
+    };
+    elements = {
+      fileList: document.createElement('div'),
+      fileListContainer: { classList: { add: vi.fn(), remove: vi.fn() } },
+      formatSelect: { value: 'image/jpeg' },
+      formatOptions: { innerHTML: '', querySelectorAll: vi.fn(() => []) },
+      convertButton: { disabled: false },
+      errorMessage: { classList: { add: vi.fn(), remove: vi.fn() } },
+      errorText: { textContent: '' },
+      loading: { classList: { add: vi.fn(), remove: vi.fn() } },
+      dropZone: { classList: { add: vi.fn(), remove: vi.fn() } },
+      fileInput: { value: '' }
+    };
+    file = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+    vi.spyOn(utils, 'isValidFileName').mockReturnValue(true);
+    vi.spyOn(utils, 'isValidFileSize').mockReturnValue(true);
+    vi.spyOn(utils, 'isValidImageType').mockResolvedValue(true);
+    vi.spyOn(utils, 'formatFileSize').mockReturnValue('1 KB');
+    vi.spyOn(utils, 'truncateFileName').mockReturnValue('test.jpg');
+    vi.spyOn(utils, 'sanitizeText').mockImplementation((text) => text);
+    vi.spyOn(utils, 'icon').mockReturnValue('<i></i>');
+    vi.spyOn(utils, 'hideError').mockImplementation(() => {});
+    vi.spyOn(memoryManager, 'revokeObjectURL').mockImplementation(() => {});
+    vi.spyOn(memoryManager, 'createObjectURL').mockReturnValue('blob:test');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('revokes previous preview URLs when files are replaced', async () => {
+    const oldFile = { name: 'old.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:old' };
+    state.currentFiles = [oldFile];
+    await eventHandlers.processFiles([file], state, elements);
+    expect(memoryManager.revokeObjectURL).toHaveBeenCalledWith('blob:old');
+  });
+
+  it('does not revoke URLs on first file selection', async () => {
+    await eventHandlers.processFiles([file], state, elements);
+    expect(memoryManager.revokeObjectURL).not.toHaveBeenCalled();
+  });
+});
+
+describe('updateFileList', () => {
+  let state;
+  let elements;
+
+  beforeEach(() => {
+    state = {
+      currentFiles: []
+    };
+    elements = {
+      fileList: document.createElement('div'),
+      fileListContainer: { classList: { add: vi.fn(), remove: vi.fn() } }
+    };
+    vi.spyOn(utils, 'formatFileSize').mockReturnValue('1 KB');
+    vi.spyOn(utils, 'truncateFileName').mockReturnValue('file.jpg');
+    vi.spyOn(utils, 'sanitizeText').mockImplementation((text) => text);
+    vi.spyOn(utils, 'icon').mockReturnValue('<i></i>');
+    vi.spyOn(memoryManager, 'createObjectURL').mockReturnValue('blob:preview');
+    vi.spyOn(lazyLoader, 'observe').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('appends new file items without clearing existing DOM', () => {
+    state.currentFiles = [{ name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' }];
+    eventHandlers.updateFileList(state, elements);
+    const existingItem = elements.fileList.firstElementChild;
+    expect(existingItem).not.toBeNull();
+
+    state.currentFiles = [
+      { name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' },
+      { name: 'b.jpg', size: 200, type: 'image/jpeg', previewUrl: 'blob:b' }
+    ];
+    eventHandlers.updateFileList(state, elements);
+    expect(elements.fileList.contains(existingItem)).toBe(true);
+  });
+
+  it('preserves existing DOM nodes when adding files', () => {
+    state.currentFiles = [
+      { name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' },
+      { name: 'b.jpg', size: 200, type: 'image/jpeg', previewUrl: 'blob:b' }
+    ];
+    eventHandlers.updateFileList(state, elements);
+    const firstItem = elements.fileList.children[0];
+    const secondItem = elements.fileList.children[1];
+
+    state.currentFiles = [
+      { name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' },
+      { name: 'b.jpg', size: 200, type: 'image/jpeg', previewUrl: 'blob:b' },
+      { name: 'c.jpg', size: 300, type: 'image/jpeg', previewUrl: 'blob:c' }
+    ];
+    eventHandlers.updateFileList(state, elements);
+    expect(elements.fileList.contains(firstItem)).toBe(true);
+    expect(elements.fileList.contains(secondItem)).toBe(true);
+  });
+
+  it('clears all items when state.currentFiles is empty', () => {
+    state.currentFiles = [{ name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' }];
+    eventHandlers.updateFileList(state, elements);
+    expect(elements.fileList.children.length).toBe(1);
+
+    state.currentFiles = [];
+    eventHandlers.updateFileList(state, elements);
+    expect(elements.fileList.children.length).toBe(0);
+    expect(elements.fileListContainer.classList.add).toHaveBeenCalledWith('d-none');
+  });
+
+  it('creates correct DOM structure per file item', () => {
+    state.currentFiles = [{ name: 'test.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:test' }];
+    eventHandlers.updateFileList(state, elements);
+    const item = elements.fileList.firstElementChild;
+    expect(item.classList.contains('file-list-item')).toBe(true);
+    expect(item.querySelector('.file-preview-thumbnail')).not.toBeNull();
+    expect(item.querySelector('.file-info')).not.toBeNull();
+    expect(item.querySelector('.remove-file-btn')).not.toBeNull();
+  });
+
+  it('assigns data-file-id for diff-based tracking', () => {
+    state.currentFiles = [{ name: 'test.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:test' }];
+    eventHandlers.updateFileList(state, elements);
+    const item = elements.fileList.firstElementChild;
+    expect(item.dataset.fileId).toBeDefined();
+  });
+});
+
+describe('removeFile', () => {
+  let state;
+  let elements;
+
+  beforeEach(() => {
+    state = {
+      currentFiles: []
+    };
+    elements = {
+      fileList: document.createElement('div'),
+      fileListContainer: { classList: { add: vi.fn(), remove: vi.fn() } },
+      fileInput: { value: '' }
+    };
+    vi.spyOn(utils, 'formatFileSize').mockReturnValue('1 KB');
+    vi.spyOn(utils, 'truncateFileName').mockReturnValue('file.jpg');
+    vi.spyOn(utils, 'sanitizeText').mockImplementation((text) => text);
+    vi.spyOn(utils, 'icon').mockReturnValue('<i></i>');
+    vi.spyOn(memoryManager, 'createObjectURL').mockReturnValue('blob:preview');
+    vi.spyOn(memoryManager, 'revokeObjectURL').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('removes only the targeted DOM node', () => {
+    state.currentFiles = [
+      { name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' },
+      { name: 'b.jpg', size: 200, type: 'image/jpeg', previewUrl: 'blob:b' }
+    ];
+    eventHandlers.updateFileList(state, elements);
+    const firstItem = elements.fileList.children[0];
+    const secondItem = elements.fileList.children[1];
+    eventHandlers.removeFile(0, state, elements);
+    expect(elements.fileList.contains(firstItem)).toBe(false);
+    expect(elements.fileList.contains(secondItem)).toBe(true);
+  });
+
+  it('preserves other DOM nodes after removal', () => {
+    state.currentFiles = [
+      { name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' },
+      { name: 'b.jpg', size: 200, type: 'image/jpeg', previewUrl: 'blob:b' },
+      { name: 'c.jpg', size: 300, type: 'image/jpeg', previewUrl: 'blob:c' }
+    ];
+    eventHandlers.updateFileList(state, elements);
+    const secondItem = elements.fileList.children[1];
+    const thirdItem = elements.fileList.children[2];
+    eventHandlers.removeFile(0, state, elements);
+    expect(elements.fileList.contains(secondItem)).toBe(true);
+    expect(elements.fileList.contains(thirdItem)).toBe(true);
+  });
+
+  it('revokes Object URL for the removed file', () => {
+    state.currentFiles = [{ name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' }];
+    eventHandlers.removeFile(0, state, elements);
+    expect(memoryManager.revokeObjectURL).toHaveBeenCalledWith('blob:a');
+  });
+
+  it('updates state.currentFiles correctly', () => {
+    state.currentFiles = [
+      { name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' },
+      { name: 'b.jpg', size: 200, type: 'image/jpeg', previewUrl: 'blob:b' }
+    ];
+    eventHandlers.updateFileList(state, elements);
+    eventHandlers.removeFile(0, state, elements);
+    expect(state.currentFiles.length).toBe(1);
+    expect(state.currentFiles[0].name).toBe('b.jpg');
+  });
+
+  it('hides container when last file is removed', () => {
+    state.currentFiles = [{ name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' }];
+    eventHandlers.updateFileList(state, elements);
+    eventHandlers.removeFile(0, state, elements);
+    expect(elements.fileListContainer.classList.add).toHaveBeenCalledWith('d-none');
+  });
+});
+
+describe('updateFileList ARIA & lazy loader integration', () => {
+  let state;
+  let elements;
+
+  beforeEach(() => {
+    state = {
+      currentFiles: []
+    };
+    elements = {
+      fileList: document.createElement('div'),
+      fileListContainer: { classList: { add: vi.fn(), remove: vi.fn() } }
+    };
+    vi.spyOn(utils, 'formatFileSize').mockReturnValue('1 KB');
+    vi.spyOn(utils, 'truncateFileName').mockReturnValue('file.jpg');
+    vi.spyOn(utils, 'sanitizeText').mockImplementation((text) => text);
+    vi.spyOn(utils, 'icon').mockReturnValue('<i></i>');
+    vi.spyOn(memoryManager, 'createObjectURL').mockReturnValue('blob:preview');
+    vi.spyOn(lazyLoader, 'observe').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('fileList has role="list" and aria-label', () => {
+    state.currentFiles = [{ name: 'test.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:test' }];
+    eventHandlers.updateFileList(state, elements);
+    expect(elements.fileList.getAttribute('role')).toBe('list');
+    expect(elements.fileList.getAttribute('aria-label')).toBeTruthy();
+  });
+
+  it('each file item has role="listitem"', () => {
+    state.currentFiles = [
+      { name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' },
+      { name: 'b.jpg', size: 200, type: 'image/jpeg', previewUrl: 'blob:b' }
+    ];
+    eventHandlers.updateFileList(state, elements);
+    Array.from(elements.fileList.children).forEach((item) => {
+      expect(item.getAttribute('role')).toBe('listitem');
+    });
+  });
+
+  it('remove buttons have aria-label', () => {
+    state.currentFiles = [{ name: 'test.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:test' }];
+    eventHandlers.updateFileList(state, elements);
+    const btn = elements.fileList.querySelector('.remove-file-btn');
+    expect(btn.getAttribute('aria-label')).toBeTruthy();
+  });
+
+  it('updateFileList calls lazyLoader.observe for preview images', () => {
+    state.currentFiles = [{ name: 'test.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:test' }];
+    eventHandlers.updateFileList(state, elements);
+    expect(lazyLoader.observe).toHaveBeenCalled();
+  });
+
+  it('images use data-src for lazy loading', () => {
+    state.currentFiles = [{ name: 'test.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:test' }];
+    eventHandlers.updateFileList(state, elements);
+    const img = elements.fileList.querySelector('img');
+    expect(img.dataset.src).toBe('blob:test');
   });
 });

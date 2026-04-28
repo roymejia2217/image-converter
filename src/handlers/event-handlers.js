@@ -1,6 +1,7 @@
 import utils from '../utils/utils.js';
 import performanceMetrics from '../core/metrics.js';
 import memoryManager from '../core/memory-manager.js';
+import lazyLoader from '../core/lazy-loader.js';
 import FORMAT_CONFIGS from '../config/format-configs.js';
 import { encodeBMP, encodeGIF, encodeCanvas, getImageData } from '../utils/encoders.js';
 import { getImageDataFull, resizeToICOSize } from '../utils/ico-resize.js';
@@ -84,6 +85,11 @@ const eventHandlers = {
         utils.showError(`Invalid files: ${invalidFiles.slice(0, 3).join(', ')}${invalidFiles.length > 3 ? '...' : ''}`, elements);
       }
       if (validFiles.length > 0) {
+        state.currentFiles.forEach(file => {
+          if (file.previewUrl) {
+            memoryManager.revokeObjectURL(file.previewUrl);
+          }
+        });
         state.currentFiles = validFiles;
         utils.hideError(elements);
         this.updateFileList(state, elements);
@@ -96,54 +102,95 @@ const eventHandlers = {
 
   updateFileList(state, elements) {
     if (!elements.fileList || !elements.fileListContainer) return;
-    elements.fileList.innerHTML = '';
+
     if (state.currentFiles.length === 0) {
+      elements.fileList.innerHTML = '';
       elements.fileListContainer.classList.add('d-none');
       return;
     }
+
     elements.fileListContainer.classList.remove('d-none');
-    state.currentFiles.forEach((file, index) => {
-      const fileItem = document.createElement('div');
-      fileItem.className = 'file-list-item';
+    elements.fileList.setAttribute('role', 'list');
+    elements.fileList.setAttribute('aria-label', 'Selected files');
 
-      const leftContainer = document.createElement('div');
-      leftContainer.className = 'd-flex align-items-center flex-grow-1';
+    const existingCount = elements.fileList.children.length;
+    const newCount = state.currentFiles.length;
 
-      const previewContainer = document.createElement('div');
-      previewContainer.className = 'file-preview-thumbnail';
-      const previewImg = document.createElement('img');
-      previewImg.className = 'w-100 h-100 object-fit-cover';
-      previewImg.alt = `Preview of ${file.name}`;
-      const previewUrl = memoryManager.createObjectURL(file);
-      file.previewUrl = previewUrl;
-      previewImg.src = previewUrl;
-      previewContainer.appendChild(previewImg);
+    // Remove excess items from the end
+    if (existingCount > newCount) {
+      for (let i = existingCount - 1; i >= newCount; i--) {
+        elements.fileList.removeChild(elements.fileList.children[i]);
+      }
+    }
 
-      const fileInfo = document.createElement('div');
-      fileInfo.className = 'file-info';
-      const truncatedName = utils.truncateFileName(file.name, 25);
-      const sanitizedFileName = utils.sanitizeText(file.name);
-      const sanitizedTruncatedName = utils.sanitizeText(truncatedName);
-      const sanitizedFileSize = utils.sanitizeText(utils.formatFileSize(file.size));
-      fileInfo.innerHTML = `
-        <div class="file-name" title="${sanitizedFileName}">${sanitizedTruncatedName}</div>
-        <div class="file-size">${sanitizedFileSize}</div>
-      `;
+    // Update or append items
+    for (let index = 0; index < newCount; index++) {
+      const file = state.currentFiles[index];
+      const existingItem = elements.fileList.children[index];
 
-      leftContainer.appendChild(previewContainer);
-      leftContainer.appendChild(fileInfo);
+      if (existingItem) {
+        // Update data-file-id on existing items
+        existingItem.dataset.fileId = String(index);
+        // Update remove button onclick to use correct index
+        const removeBtn = existingItem.querySelector('.remove-file-btn');
+        if (removeBtn) {
+          removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
+          removeBtn.onclick = () => {
+            this.removeFile(index, state, elements);
+          };
+        }
+      } else {
+        // Create new item
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-list-item';
+        fileItem.setAttribute('role', 'listitem');
+        fileItem.dataset.fileId = String(index);
 
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'remove-file-btn';
-      removeBtn.innerHTML = utils.icon('x-lg', 16);
-      removeBtn.onclick = () => {
-        this.removeFile(index, state, elements);
-      };
+        const leftContainer = document.createElement('div');
+        leftContainer.className = 'd-flex align-items-center flex-grow-1';
 
-      fileItem.appendChild(leftContainer);
-      fileItem.appendChild(removeBtn);
-      elements.fileList.appendChild(fileItem);
-    });
+        const previewContainer = document.createElement('div');
+        previewContainer.className = 'file-preview-thumbnail';
+        const previewImg = document.createElement('img');
+        previewImg.className = 'w-100 h-100 object-fit-cover';
+        previewImg.alt = `Preview of ${file.name}`;
+        previewImg.loading = 'lazy';
+        previewImg.decoding = 'async';
+        const previewUrl = file.previewUrl || memoryManager.createObjectURL(file);
+        file.previewUrl = previewUrl;
+        previewImg.dataset.src = previewUrl;
+        previewContainer.appendChild(previewImg);
+
+        const fileInfo = document.createElement('div');
+        fileInfo.className = 'file-info';
+        const truncatedName = utils.truncateFileName(file.name, 25);
+        const sanitizedFileName = utils.sanitizeText(file.name);
+        const sanitizedTruncatedName = utils.sanitizeText(truncatedName);
+        const sanitizedFileSize = utils.sanitizeText(utils.formatFileSize(file.size));
+        fileInfo.innerHTML = `
+          <div class="file-name" title="${sanitizedFileName}">${sanitizedTruncatedName}</div>
+          <div class="file-size">${sanitizedFileSize}</div>
+        `;
+
+        leftContainer.appendChild(previewContainer);
+        leftContainer.appendChild(fileInfo);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-file-btn';
+        removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
+        removeBtn.innerHTML = utils.icon('x-lg', 16);
+        removeBtn.onclick = () => {
+          this.removeFile(index, state, elements);
+        };
+
+        fileItem.appendChild(leftContainer);
+        fileItem.appendChild(removeBtn);
+        elements.fileList.appendChild(fileItem);
+
+        // Observe the preview image for lazy loading
+        lazyLoader.observe(previewImg);
+      }
+    }
   },
 
   removeFile(index, state, elements) {
@@ -153,8 +200,33 @@ const eventHandlers = {
         memoryManager.revokeObjectURL(file.previewUrl);
       }
     }
+    // Remove the specific DOM node
+    if (elements.fileList && elements.fileList.children[index]) {
+      const itemToRemove = elements.fileList.children[index];
+      const img = itemToRemove.querySelector('img');
+      if (img) {
+        lazyLoader.unobserve(img);
+      }
+      elements.fileList.removeChild(itemToRemove);
+    }
     state.currentFiles.splice(index, 1);
-    this.updateFileList(state, elements);
+    // Update data-file-id and onclick for remaining items
+    for (let i = 0; i < state.currentFiles.length; i++) {
+      const item = elements.fileList.children[i];
+      if (item) {
+        item.dataset.fileId = String(i);
+        const removeBtn = item.querySelector('.remove-file-btn');
+        if (removeBtn) {
+          removeBtn.setAttribute('aria-label', `Remove ${state.currentFiles[i].name}`);
+          removeBtn.onclick = () => {
+            this.removeFile(i, state, elements);
+          };
+        }
+      }
+    }
+    if (state.currentFiles.length === 0) {
+      elements.fileListContainer.classList.add('d-none');
+    }
     this.updateFileInfo(state, elements);
   },
 
@@ -163,6 +235,7 @@ const eventHandlers = {
   },
 
   removeAllImages(state, elements) {
+    lazyLoader.disconnect();
     state.currentFiles.forEach(file => {
       if (file.previewUrl) {
         memoryManager.revokeObjectURL(file.previewUrl);
