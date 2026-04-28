@@ -31,7 +31,6 @@ body {
 #fileList {
   max-height: clamp(12rem, 30vh, 20rem);
   overflow-y: auto;
-  scroll-behavior: smooth;
 }
 
 /* Format option card */

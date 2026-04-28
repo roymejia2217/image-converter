@@ -142,7 +142,7 @@ const eventHandlers = {
       } else {
         // Create new item
         const fileItem = document.createElement('div');
-        fileItem.className = 'd-flex align-items-center justify-content-between p-2 border rounded bg-body-secondary overflow-hidden';
+        fileItem.className = 'd-flex align-items-center justify-content-between p-2 border rounded bg-body-secondary flex-shrink-0';
         fileItem.setAttribute('role', 'listitem');
         fileItem.dataset.fileId = String(index);
 
