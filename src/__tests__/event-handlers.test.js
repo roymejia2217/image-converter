@@ -368,10 +368,10 @@ describe('updateFileList', () => {
     state.currentFiles = [{ name: 'test.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:test' }];
     eventHandlers.updateFileList(state, elements);
     const item = elements.fileList.firstElementChild;
-    expect(item.classList.contains('file-list-item')).toBe(true);
-    expect(item.querySelector('.file-preview-thumbnail')).not.toBeNull();
-    expect(item.querySelector('.file-info')).not.toBeNull();
-    expect(item.querySelector('.remove-file-btn')).not.toBeNull();
+    expect(item.classList.contains('d-flex')).toBe(true);
+    expect(item.querySelector('.flex-shrink-0')).not.toBeNull();
+    expect(item.querySelector('.flex-grow-1')).not.toBeNull();
+    expect(item.querySelector('.btn-link')).not.toBeNull();
   });
 
   it('assigns data-file-id for diff-based tracking', () => {
@@ -504,7 +504,7 @@ describe('updateFileList ARIA & lazy loader integration', () => {
   it('remove buttons have aria-label', () => {
     state.currentFiles = [{ name: 'test.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:test' }];
     eventHandlers.updateFileList(state, elements);
-    const btn = elements.fileList.querySelector('.remove-file-btn');
+    const btn = elements.fileList.querySelector('.btn-link');
     expect(btn.getAttribute('aria-label')).toBeTruthy();
   });
 

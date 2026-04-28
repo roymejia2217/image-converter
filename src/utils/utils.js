@@ -305,7 +305,7 @@ const utils = {
     if (TOOLTIP_DESCRIPTIONS[tooltipKey]) {
       label.innerHTML = `
         ${this.sanitizeText(option.label)}
-        <i class="bi bi-question-circle bi-16 text-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="${this.sanitizeText(TOOLTIP_DESCRIPTIONS[tooltipKey])}" style="cursor: help;"></i>
+        <i class="bi bi-question-circle text-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="${this.sanitizeText(TOOLTIP_DESCRIPTIONS[tooltipKey])}" style="cursor: help;"></i>
       `;
       if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
         const tooltipTrigger = label.querySelector('[data-bs-toggle="tooltip"]');
@@ -404,9 +404,8 @@ const utils = {
     }
   },
 
-  icon(name, size) {
-    const sizeClass = size ? ` bi-${size}` : '';
-    return `<i class="bi bi-${name}${sizeClass}"></i>`;
+  icon(name) {
+    return `<i class="bi bi-${name}"></i>`;
   }
 };
 

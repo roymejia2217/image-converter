@@ -132,7 +132,7 @@ const eventHandlers = {
         // Update data-file-id on existing items
         existingItem.dataset.fileId = String(index);
         // Update remove button onclick to use correct index
-        const removeBtn = existingItem.querySelector('.remove-file-btn');
+        const removeBtn = existingItem.querySelector('.btn-link');
         if (removeBtn) {
           removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
           removeBtn.onclick = () => {
@@ -142,7 +142,7 @@ const eventHandlers = {
       } else {
         // Create new item
         const fileItem = document.createElement('div');
-        fileItem.className = 'file-list-item';
+        fileItem.className = 'd-flex align-items-center justify-content-between p-2 border rounded bg-body-secondary overflow-hidden';
         fileItem.setAttribute('role', 'listitem');
         fileItem.dataset.fileId = String(index);
 
@@ -150,7 +150,8 @@ const eventHandlers = {
         leftContainer.className = 'd-flex align-items-center flex-grow-1';
 
         const previewContainer = document.createElement('div');
-        previewContainer.className = 'file-preview-thumbnail';
+        previewContainer.className = 'flex-shrink-0 me-2 rounded-3 overflow-hidden border border-2 bg-body';
+        previewContainer.style.cssText = 'width:48px;height:48px;';
         const previewImg = document.createElement('img');
         previewImg.className = 'w-100 h-100 object-fit-cover';
         previewImg.alt = `Preview of ${file.name}`;
@@ -176,23 +177,24 @@ const eventHandlers = {
         previewContainer.appendChild(previewImg);
 
         const fileInfo = document.createElement('div');
-        fileInfo.className = 'file-info';
+        fileInfo.className = 'flex-grow-1 min-w-0';
         const truncatedName = utils.truncateFileName(file.name, 25);
         const sanitizedFileName = utils.sanitizeText(file.name);
         const sanitizedTruncatedName = utils.sanitizeText(truncatedName);
         const sanitizedFileSize = utils.sanitizeText(utils.formatFileSize(file.size));
         fileInfo.innerHTML = `
-          <div class="file-name" title="${sanitizedFileName}">${sanitizedTruncatedName}</div>
-          <div class="file-size">${sanitizedFileSize}</div>
+          <div class="fw-medium text-truncate" title="${sanitizedFileName}">${sanitizedTruncatedName}</div>
+          <div class="small text-body-secondary text-truncate">${sanitizedFileSize}</div>
         `;
 
         leftContainer.appendChild(previewContainer);
         leftContainer.appendChild(fileInfo);
 
         const removeBtn = document.createElement('button');
-        removeBtn.className = 'remove-file-btn';
+        removeBtn.className = 'btn btn-link text-danger p-1 rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0';
+        removeBtn.setAttribute('type', 'button');
         removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
-        removeBtn.innerHTML = utils.icon('x-lg', 16);
+        removeBtn.innerHTML = utils.icon('x-lg');
         removeBtn.onclick = () => {
           this.removeFile(index, state, elements);
         };
@@ -229,7 +231,7 @@ const eventHandlers = {
       const item = elements.fileList.children[i];
       if (item) {
         item.dataset.fileId = String(i);
-        const removeBtn = item.querySelector('.remove-file-btn');
+        const removeBtn = item.querySelector('.btn-link');
         if (removeBtn) {
           removeBtn.setAttribute('aria-label', `Remove ${state.currentFiles[i].name}`);
           removeBtn.onclick = () => {

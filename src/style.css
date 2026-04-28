@@ -34,107 +34,6 @@ body {
   scroll-behavior: smooth;
 }
 
-/* File list items */
-.file-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.75rem;
-  background-color: var(--bs-secondary-bg);
-  border: 1px solid var(--bs-border-color);
-  border-radius: var(--bs-border-radius);
-  contain: layout paint;
-  transition: background-color 0.15s ease;
-  min-height: 60px;
-  max-width: 100%;
-  overflow: hidden;
-}
-
-.file-list-item:hover {
-  background-color: var(--bs-tertiary-bg);
-}
-
-/* File preview thumbnail */
-.file-preview-thumbnail {
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-  margin-right: 0.75rem;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 2px solid var(--bs-border-color);
-  background: var(--bs-body-bg);
-  transition: border-color 0.2s ease, transform 0.2s ease;
-}
-
-.file-preview-thumbnail:hover {
-  border-color: var(--bs-primary);
-  transform: scale(1.05);
-}
-
-.file-preview-thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.file-preview-thumbnail:hover img {
-  transform: scale(1.05);
-}
-
-.file-preview-thumbnail img.loaded {
-  opacity: 1;
-}
-
-/* File info */
-.file-info {
-  flex: 1;
-  min-width: 0;
-  max-width: calc(100% - 60px);
-}
-
-.file-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-  color: var(--bs-body-color);
-}
-
-.file-size {
-  font-size: 0.75rem;
-  color: var(--bs-secondary-color);
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Remove file button */
-.remove-file-btn {
-  margin-left: 0.75rem;
-  color: var(--bs-danger);
-  padding: 0.25rem;
-  border-radius: 50%;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.remove-file-btn:hover {
-  background-color: var(--bs-danger-bg-subtle);
-}
-
 /* Format option card */
 .format-option {
   margin-bottom: 1rem;
@@ -209,54 +108,9 @@ body {
   }
 }
 
-/* Image preview container */
-.image-preview-container {
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.image-preview-container:hover {
-  transform: scale(1.02);
-  box-shadow: 0 8px 12px -1px rgba(0, 0, 0, 0.15);
-}
-
-.image-preview-container img {
-  transition: transform 0.3s ease;
-}
-
-.image-preview-container:hover img {
-  transform: scale(1.05);
-}
-
 /* Mobile optimizations */
 @media (max-width: 768px) {
   #fileList {
     max-height: clamp(10rem, 25vh, 16rem);
   }
-
-  .file-list-item {
-    min-height: 50px;
-  }
-
-  .file-preview-thumbnail {
-    width: 40px;
-    height: 40px;
-  }
 }
-
-/* High DPI screens */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .file-preview-thumbnail img {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-  }
-}
-
-/* Bootstrap Icons sizing utilities */
-.bi-16 { font-size: 1rem; }
-.bi-20 { font-size: 1.25rem; }
-.bi-28 { font-size: 1.75rem; }
-.bi-48 { font-size: 3rem; }
