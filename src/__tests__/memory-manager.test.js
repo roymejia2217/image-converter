@@ -4,6 +4,7 @@ import memoryManager from '../core/memory-manager.js';
 describe('memory-manager', () => {
   beforeEach(() => {
     memoryManager.objectUrls.clear();
+    memoryManager.thumbnailBlobUrls.clear();
     memoryManager.stats = { created: 0, revoked: 0, leaked: 0 };
   });
 
@@ -41,6 +42,41 @@ describe('memory-manager', () => {
     const stats = memoryManager.getStats();
     expect(stats.created).toBe(1);
     expect(stats.active).toBe(1);
+  });
+
+  it('createThumbnailURL creates and tracks in separate Set', () => {
+    const blob = new Blob(['thumb']);
+    const url = memoryManager.createThumbnailURL(blob);
+    expect(typeof url).toBe('string');
+    expect(memoryManager.thumbnailBlobUrls.has(url)).toBe(true);
+    expect(memoryManager.objectUrls.has(url)).toBe(false);
+    expect(memoryManager.stats.created).toBe(1);
+  });
+
+  it('revokeThumbnailURL revokes from thumbnail set only', () => {
+    const blob = new Blob(['thumb']);
+    const url = memoryManager.createThumbnailURL(blob);
+    memoryManager.revokeThumbnailURL(url);
+    expect(memoryManager.thumbnailBlobUrls.has(url)).toBe(false);
+    expect(memoryManager.stats.revoked).toBe(1);
+  });
+
+  it('cleanup revokes both regular and thumbnail URLs', () => {
+    const blob1 = new Blob(['test']);
+    const blob2 = new Blob(['thumb']);
+    const regularUrl = memoryManager.createObjectURL(blob1);
+    const thumbUrl = memoryManager.createThumbnailURL(blob2);
+    memoryManager.cleanup();
+    expect(memoryManager.objectUrls.has(regularUrl)).toBe(false);
+    expect(memoryManager.thumbnailBlobUrls.has(thumbUrl)).toBe(false);
+    expect(memoryManager.stats.leaked).toBe(2);
+  });
+
+  it('getStats includes activeThumbnailUrls', () => {
+    const blob = new Blob(['thumb']);
+    memoryManager.createThumbnailURL(blob);
+    const stats = memoryManager.getStats();
+    expect(stats.activeThumbnailUrls).toBe(1);
   });
 });
 

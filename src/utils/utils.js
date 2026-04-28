@@ -400,7 +400,7 @@ const utils = {
         }, 'image/jpeg', 0.6);
       });
     } catch {
-      return file;
+      throw new Error('Thumbnail generation failed');
     }
   },
 

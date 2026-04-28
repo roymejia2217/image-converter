@@ -89,6 +89,8 @@ const eventHandlers = {
           if (file.previewUrl) {
             memoryManager.revokeObjectURL(file.previewUrl);
           }
+          file.previewUrl = null;
+          file.thumbnailBlob = null;
         });
         state.currentFiles = validFiles;
         utils.hideError(elements);
@@ -102,6 +104,19 @@ const eventHandlers = {
 
   async updateFileList(state, elements) {
     if (!elements.fileList || !elements.fileListContainer) return;
+
+    if (!elements.fileList._delegateAttached) {
+      elements.fileList.addEventListener('click', (event) => {
+        const removeBtn = event.target.closest('.btn-link');
+        if (!removeBtn) return;
+        const fileItem = removeBtn.closest('.file-item');
+        if (!fileItem) return;
+        const index = parseInt(fileItem.dataset.fileId, 10);
+        if (isNaN(index)) return;
+        this.removeFile(index, state, elements);
+      });
+      elements.fileList._delegateAttached = true;
+    }
 
     if (state.currentFiles.length === 0) {
       elements.fileList.innerHTML = '';
@@ -131,18 +146,15 @@ const eventHandlers = {
       if (existingItem) {
         // Update data-file-id on existing items
         existingItem.dataset.fileId = String(index);
-        // Update remove button onclick to use correct index
+        // Update remove button aria-label
         const removeBtn = existingItem.querySelector('.btn-link');
         if (removeBtn) {
           removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
-          removeBtn.onclick = () => {
-            this.removeFile(index, state, elements);
-          };
         }
       } else {
         // Create new item
         const fileItem = document.createElement('div');
-        fileItem.className = 'd-flex align-items-center justify-content-between p-2 border rounded bg-body-secondary flex-shrink-0';
+        fileItem.className = 'd-flex align-items-center justify-content-between p-2 border rounded bg-body-secondary flex-shrink-0 file-item';
         fileItem.setAttribute('role', 'listitem');
         fileItem.dataset.fileId = String(index);
 
@@ -161,16 +173,23 @@ const eventHandlers = {
         if (file.previewUrl) {
           previewImg.dataset.src = file.previewUrl;
         } else if (file.thumbnailBlob) {
+          if (file.previewUrl) {
+            memoryManager.revokeObjectURL(file.previewUrl);
+          }
           const previewUrl = memoryManager.createObjectURL(file.thumbnailBlob);
           file.previewUrl = previewUrl;
           previewImg.dataset.src = previewUrl;
         } else {
-          const sourceBlob = file;
-          const previewUrl = memoryManager.createObjectURL(sourceBlob);
-          file.previewUrl = previewUrl;
-          previewImg.dataset.src = previewUrl;
+          const fallbackUrl = memoryManager.createObjectURL(file);
+          file.previewUrl = fallbackUrl;
+          previewImg.dataset.src = fallbackUrl;
           utils.createThumbnailBlob(file).then((thumbnailBlob) => {
             file.thumbnailBlob = thumbnailBlob;
+            memoryManager.revokeObjectURL(fallbackUrl);
+            const thumbUrl = memoryManager.createObjectURL(thumbnailBlob);
+            file.previewUrl = thumbUrl;
+            previewImg.dataset.src = thumbUrl;
+            previewImg.src = thumbUrl;
           }).catch(() => {});
         }
 
@@ -195,9 +214,6 @@ const eventHandlers = {
         removeBtn.setAttribute('type', 'button');
         removeBtn.setAttribute('aria-label', `Remove ${file.name}`);
         removeBtn.innerHTML = utils.icon('x-lg');
-        removeBtn.onclick = () => {
-          this.removeFile(index, state, elements);
-        };
 
         fileItem.appendChild(leftContainer);
         fileItem.appendChild(removeBtn);
@@ -214,6 +230,7 @@ const eventHandlers = {
     if (file) {
       if (file.previewUrl) {
         memoryManager.revokeObjectURL(file.previewUrl);
+        file.previewUrl = null;
       }
     }
     // Remove the specific DOM node
@@ -226,18 +243,11 @@ const eventHandlers = {
       elements.fileList.removeChild(itemToRemove);
     }
     state.currentFiles.splice(index, 1);
-    // Update data-file-id and onclick for remaining items
-    for (let i = 0; i < state.currentFiles.length; i++) {
+    // Update data-file-id for shifted items
+    for (let i = index; i < state.currentFiles.length; i++) {
       const item = elements.fileList.children[i];
       if (item) {
         item.dataset.fileId = String(i);
-        const removeBtn = item.querySelector('.btn-link');
-        if (removeBtn) {
-          removeBtn.setAttribute('aria-label', `Remove ${state.currentFiles[i].name}`);
-          removeBtn.onclick = () => {
-            this.removeFile(i, state, elements);
-          };
-        }
       }
     }
     if (state.currentFiles.length === 0) {
@@ -260,7 +270,7 @@ const eventHandlers = {
     state.currentFiles = [];
     elements.fileInput.value = '';
     elements.fileListContainer.classList.add('d-none');
-    await this.updateFileList(state, elements);
+    elements.fileList.innerHTML = '';
     utils.hideError(elements);
   },
 

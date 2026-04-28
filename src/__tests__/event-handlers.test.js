@@ -294,6 +294,14 @@ describe('processFiles', () => {
     await eventHandlers.processFiles([file], state, elements);
     expect(memoryManager.revokeObjectURL).not.toHaveBeenCalled();
   });
+
+  it('clears thumbnailBlob when files are replaced', async () => {
+    const oldFile = { name: 'old.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:old', thumbnailBlob: new Blob(['thumb']) };
+    state.currentFiles = [oldFile];
+    await eventHandlers.processFiles([file], state, elements);
+    expect(oldFile.previewUrl).toBeNull();
+    expect(oldFile.thumbnailBlob).toBeNull();
+  });
 });
 
 describe('updateFileList', () => {
@@ -457,6 +465,19 @@ describe('removeFile', () => {
     eventHandlers.removeFile(0, state, elements);
     expect(elements.fileListContainer.classList.add).toHaveBeenCalledWith('d-none');
   });
+
+  it('preserves correct content after mid-list removal', () => {
+    state.currentFiles = [
+      { name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' },
+      { name: 'b.jpg', size: 200, type: 'image/jpeg', previewUrl: 'blob:b' },
+      { name: 'c.jpg', size: 300, type: 'image/jpeg', previewUrl: 'blob:c' }
+    ];
+    eventHandlers.updateFileList(state, elements);
+    eventHandlers.removeFile(1, state, elements);
+    expect(state.currentFiles.length).toBe(2);
+    expect(elements.fileList.children[0].dataset.fileId).toBe('0');
+    expect(elements.fileList.children[1].dataset.fileId).toBe('1');
+  });
 });
 
 describe('updateFileList ARIA & lazy loader integration', () => {
@@ -476,6 +497,7 @@ describe('updateFileList ARIA & lazy loader integration', () => {
     vi.spyOn(utils, 'sanitizeText').mockImplementation((text) => text);
     vi.spyOn(utils, 'icon').mockReturnValue('<i></i>');
     vi.spyOn(memoryManager, 'createObjectURL').mockReturnValue('blob:preview');
+    vi.spyOn(memoryManager, 'revokeObjectURL').mockImplementation(() => {});
     vi.spyOn(lazyLoader, 'observe').mockImplementation(() => {});
   });
 
@@ -519,5 +541,120 @@ describe('updateFileList ARIA & lazy loader integration', () => {
     eventHandlers.updateFileList(state, elements);
     const img = elements.fileList.querySelector('img');
     expect(img.dataset.src).toBe('blob:test');
+  });
+
+  it('event delegation fires on remove button click', () => {
+    state.currentFiles = [
+      { name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' },
+      { name: 'b.jpg', size: 200, type: 'image/jpeg', previewUrl: 'blob:b' }
+    ];
+    eventHandlers.updateFileList(state, elements);
+    const removeBtn = elements.fileList.children[1].querySelector('.btn-link');
+    vi.spyOn(eventHandlers, 'removeFile').mockImplementation(() => {});
+    removeBtn.click();
+    expect(eventHandlers.removeFile).toHaveBeenCalledWith(1, state, elements);
+  });
+
+  it('event delegation ignores non-button clicks', () => {
+    state.currentFiles = [{ name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' }];
+    eventHandlers.updateFileList(state, elements);
+    vi.spyOn(eventHandlers, 'removeFile').mockImplementation(() => {});
+    const fileItem = elements.fileList.children[0];
+    fileItem.click();
+    expect(eventHandlers.removeFile).not.toHaveBeenCalled();
+  });
+
+  it('assigns file-item class to new items', () => {
+    state.currentFiles = [{ name: 'test.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:test' }];
+    eventHandlers.updateFileList(state, elements);
+    const item = elements.fileList.firstElementChild;
+    expect(item.classList.contains('file-item')).toBe(true);
+  });
+
+  it('creates URL from thumbnailBlob when previewUrl is missing', () => {
+    const file = { name: 'test.jpg', size: 100, type: 'image/jpeg', thumbnailBlob: new Blob(['thumb']) };
+    state.currentFiles = [file];
+    eventHandlers.updateFileList(state, elements);
+    expect(memoryManager.createObjectURL).toHaveBeenCalledWith(file.thumbnailBlob);
+    expect(file.previewUrl).toBe('blob:preview');
+  });
+});
+
+describe('removeAllImages', () => {
+  let state;
+  let elements;
+
+  beforeEach(() => {
+    state = {
+      currentFiles: [
+        { name: 'a.jpg', size: 100, type: 'image/jpeg', previewUrl: 'blob:a' }
+      ]
+    };
+    elements = {
+      fileList: document.createElement('div'),
+      fileListContainer: { classList: { add: vi.fn(), remove: vi.fn() } },
+      fileInput: { value: 'some-value' }
+    };
+    vi.spyOn(memoryManager, 'revokeObjectURL').mockImplementation(() => {});
+    vi.spyOn(utils, 'hideError').mockImplementation(() => {});
+    vi.spyOn(eventHandlers, 'updateFileList').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('clears DOM directly without calling updateFileList', async () => {
+    elements.fileList.appendChild(document.createElement('div'));
+    await eventHandlers.removeAllImages(state, elements);
+    expect(elements.fileList.innerHTML).toBe('');
+    expect(eventHandlers.updateFileList).not.toHaveBeenCalled();
+  });
+});
+
+describe('updateFileList thumbnail fallback', () => {
+  let state;
+  let elements;
+  let urlCounter;
+
+  beforeEach(() => {
+    urlCounter = 0;
+    state = {
+      currentFiles: []
+    };
+    elements = {
+      fileList: document.createElement('div'),
+      fileListContainer: { classList: { add: vi.fn(), remove: vi.fn() } }
+    };
+    vi.spyOn(utils, 'formatFileSize').mockReturnValue('1 KB');
+    vi.spyOn(utils, 'truncateFileName').mockReturnValue('file.jpg');
+    vi.spyOn(utils, 'sanitizeText').mockImplementation((text) => text);
+    vi.spyOn(utils, 'icon').mockReturnValue('<i></i>');
+    vi.spyOn(memoryManager, 'createObjectURL').mockImplementation(() => {
+      urlCounter++;
+      return `blob:preview-${urlCounter}`;
+    });
+    vi.spyOn(memoryManager, 'revokeObjectURL').mockImplementation(() => {});
+    vi.spyOn(lazyLoader, 'observe').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('revokes fallback URL when thumbnail is ready', async () => {
+    const thumbnailBlob = new Blob(['thumbnail']);
+    vi.spyOn(utils, 'createThumbnailBlob').mockResolvedValue(thumbnailBlob);
+
+    state.currentFiles = [{ name: 'test.jpg', size: 100, type: 'image/jpeg' }];
+    eventHandlers.updateFileList(state, elements);
+
+    expect(memoryManager.createObjectURL).toHaveBeenCalledTimes(1);
+    const fallbackUrl = memoryManager.createObjectURL.mock.results[0].value;
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(memoryManager.revokeObjectURL).toHaveBeenCalledWith(fallbackUrl);
+    expect(memoryManager.createObjectURL).toHaveBeenCalledTimes(2);
   });
 });

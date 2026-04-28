@@ -144,6 +144,15 @@ describe('sanitizeText', () => {
   });
 });
 
+describe('createThumbnailBlob', () => {
+  it('throws on createImageBitmap failure', async () => {
+    vi.stubGlobal('createImageBitmap', () => Promise.reject(new Error('Invalid image')));
+    const file = new File(['invalid'], 'test.jpg', { type: 'image/jpeg' });
+    await expect(utils.createThumbnailBlob(file)).rejects.toThrow('Thumbnail generation failed');
+    vi.unstubAllGlobals();
+  });
+});
+
 describe('validateInputParams', () => {
   it('returns empty array for valid quality', () => {
     expect(utils.validateInputParams({ initialQuality: 0.5 })).toEqual([]);
